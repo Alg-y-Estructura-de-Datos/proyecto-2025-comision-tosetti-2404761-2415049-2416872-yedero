@@ -1,0 +1,4 @@
+"C:\Program Files\JetBrains\CLion 2024.3.5\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug -G "MinGW Makefiles" -S D:\AYED\proyecto-2025-comision-tosetti-2404761-2415049-2416872-yedero -B D:\AYED\proyecto-2025-comision-tosetti-2404761-2415049-2416872-yedero\cmake-build-debug
+-- Configuring done (0.9s)
+-- Generating done (0.1s)
+-- Build files have been written to: D:/AYED/proyecto-2025-comision-tosetti-2404761-2415049-2416872-yedero/cmake-build-debug
