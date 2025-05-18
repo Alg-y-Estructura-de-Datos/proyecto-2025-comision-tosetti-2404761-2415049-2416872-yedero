@@ -1,3 +1,5 @@
-C:/Users/lover/Desktop/EntregaParcial2/cmake-build-debug/CMakeFiles/U00-E06.dir
-C:/Users/lover/Desktop/EntregaParcial2/cmake-build-debug/CMakeFiles/edit_cache.dir
-C:/Users/lover/Desktop/EntregaParcial2/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+D:/AYED/proyecto-2025-comision-tosetti-2404761-2415049-2416872-yedero/cmake-build-debug/CMakeFiles/Ej1.dir
+D:/AYED/proyecto-2025-comision-tosetti-2404761-2415049-2416872-yedero/cmake-build-debug/CMakeFiles/Ej2.dir
+D:/AYED/proyecto-2025-comision-tosetti-2404761-2415049-2416872-yedero/cmake-build-debug/CMakeFiles/Ej3.dir
+D:/AYED/proyecto-2025-comision-tosetti-2404761-2415049-2416872-yedero/cmake-build-debug/CMakeFiles/edit_cache.dir
+D:/AYED/proyecto-2025-comision-tosetti-2404761-2415049-2416872-yedero/cmake-build-debug/CMakeFiles/rebuild_cache.dir

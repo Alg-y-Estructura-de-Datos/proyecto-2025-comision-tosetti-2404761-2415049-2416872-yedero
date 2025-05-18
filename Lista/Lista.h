@@ -1,6 +1,7 @@
 #ifndef U02_LISTAS_LISTA_LISTA_H_
 #define U02_LISTAS_LISTA_LISTA_H_
 #include "nodo.h"
+#include <iostream>
 
 /**
  * Clase que implementa una Lista Enlasada generica, ya que puede
@@ -146,7 +147,8 @@ template <class T> void Lista<T>::insertarUltimo(T dato) {
 }
 
 /**
- * Elimina el nodo en la posicion 'pos' de la lista enlasada
+ * Elimina el nodo en la posicion 'pos' de la lista enlasada, reenlazando los nodos
+ * adecuadamente.
  * @tparam T
  * @param pos posicion del nodo a eliminar
  */
