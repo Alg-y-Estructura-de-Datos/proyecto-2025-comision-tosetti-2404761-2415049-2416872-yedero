@@ -1,531 +1,579 @@
-#include <windows.h> // (solo en Windows) Libreria para arreglar los caracteres en la consola.
-#include <vector>      // Usamos vector
-#include <unordered_map> // HashMap de la libreria estandar
-#include <algorithm>   // Para sort
-#include <iostream>    // Para cout, endl
-#include <string>      // Para string
-#include <fstream>     // Para ifstream
-#include <limits> // Utilizado para generar un numero muy grande
-#include <sstream>     // Para stringstream
-#include <iomanip>     // Para fixed, setprecision (útil para imprimir double)
-// #include <cctype>    // Para tolower (si quieres estandarizar mayúsculas/minúsculas)
-// #include <locale>    // Para tolower con locale
+#include <vector>
+#include <unordered_map>
+#include <algorithm>
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <limits>
+#include <sstream>
+#include <iomanip>
+#include <chrono>
 
-// #include <chrono> // <--- Eliminado
-// #include "Lista/Lista.h" // <--- Eliminado
+#define BASE_DE_DATOS "C:/Codigos/ventas_sudamerica.csv"
 
-#define baseDeDatos "ventas_sudamerica.csv"
+using namespace std;
+using namespace std::chrono;
 
-using namespace std; // Considera no usar using namespace std; en archivos .h o proyectos grandes
-
-// Función auxiliar para eliminar espacios al inicio y final de una cadena
-string trim(const string& str) {
-    size_t first = str.find_first_not_of(" \t\n\r");
-    if (string::npos == first) {
-        return str; // No hay caracteres no blancos
-    }
-    size_t last = str.find_last_not_of(" \t\n\r");
-    return str.substr(first, (last - first + 1));
-}
-
-/*
-// Opcional: Función para estandarizar a minúsculas si necesitas insensibilidad a mayúsculas/minúsculas
-string to_lower(const string& str) {
-    string lower_str = str;
-    // locale loc; // Si necesitas soporte completo de locale
-    // for (char& c : lower_str) {
-    //     c = tolower(c, loc); // Usar con locale
-    // }
-    // O simple tolower para ASCII/basic:
-    for (char& c : lower_str) {
-       if (c >= 'A' && c <= 'Z') {
-           c = c - ('A' - 'a');
-       }
-       // Considerar tildes y otros caracteres si es necesario
-    }
-    return lower_str;
-}
-*/
-
+// ======= ESTRUCTURAS Y DEFINICIONES =======
 struct Venta {
-    int idVenta;
+    int idVenta{};
     string fecha;
     string pais;
     string ciudad;
     string cliente;
     string producto;
     string categoria;
-    int cantidad;
-    double precioUnitario; // Usamos double
-    double montoTotal;     // Usamos double
+    int cantidad{};
+    double precioUnitario{};
+    double montoTotal{};
     string medioEnvio;
     string estadoEnvio;
 };
 
-// La función procesar ahora trabaja con vector<Venta>
-void procesar(vector<Venta>& vectorBaseDeDatos){ // <-- Recibe un vector por referencia
-    ifstream archivo(baseDeDatos);
+// ======= FUNCIONES AUXILIARES =======
+string trim(const string& str) {
+    size_t first = str.find_first_not_of(" \t\n\r");
+    if (string::npos == first) {
+        return str;
+    }
+    size_t last = str.find_last_not_of(" \t\n\r");
+    return str.substr(first, (last - first + 1));
+}
 
+// ======= FUNCIONES DE CARGA CSV =======
+void cargarVentas(vector<Venta>& ventas) {
+    ifstream archivo(BASE_DE_DATOS);
     if (!archivo.is_open()) {
-        cout << "Error: No se pudo abrir el archivo " << baseDeDatos << endl;
+        cout << "Error al abrir el archivo." << endl;
         return;
     }
 
     string linea;
-    getline(archivo, linea); // Leer encabezado
+    getline(archivo, linea); // Saltar encabezado
+    ventas.clear(); // Limpiar el vector por si tiene datos
 
-    cout << "Iniciando lectura de datos..." << endl; // Mensaje de progreso
-    // auto inicio_lectura = chrono::high_resolution_clock::now(); // <--- Eliminado
-
-    // Bucle UNICO para leer las líneas de datos
     while (getline(archivo, linea)) {
         stringstream ss(linea);
         string campo;
-        Venta venta;
+        Venta v;
 
-        // Procesamos cada campo
-        getline(ss, campo, ','); venta.idVenta = stoi(campo);
-        getline(ss, venta.fecha, ',');
+        getline(ss, campo, ','); v.idVenta = stoi(campo);
+        getline(ss, v.fecha, ',');
 
-        getline(ss, venta.pais, ',');
-        venta.pais = trim(venta.pais); // <-- Aplicar limpieza
-        // if needed: venta.pais = to_lower(venta.pais);
+        getline(ss, v.pais, ',');
+        v.pais = trim(v.pais);
 
-        getline(ss, venta.ciudad, ',');
-        venta.ciudad = trim(venta.ciudad); // <-- Aplicar limpieza
-        // if needed: venta.ciudad = to_lower(venta.ciudad);
+        getline(ss, v.ciudad, ',');
+        v.ciudad = trim(v.ciudad);
 
-        getline(ss, venta.cliente, ',');
+        getline(ss, v.cliente, ',');
 
-        getline(ss, venta.producto, ',');
-        venta.producto = trim(venta.producto); // <-- Aplicar limpieza
-        // if needed: venta.producto = to_lower(venta.producto);
+        getline(ss, v.producto, ',');
+        v.producto = trim(v.producto);
 
-        getline(ss, venta.categoria, ',');
-        venta.categoria = trim(venta.categoria); // <-- Aplicar limpieza
-        // if needed: venta.categoria = to_lower(venta.categoria);
+        getline(ss, v.categoria, ',');
+        v.categoria = trim(v.categoria);
 
+        getline(ss, campo, ','); v.cantidad = stoi(campo);
+        getline(ss, campo, ','); v.precioUnitario = stod(campo);
+        getline(ss, campo, ','); v.montoTotal = stod(campo);
 
-        getline(ss, campo, ','); venta.cantidad = stoi(campo);
-        getline(ss, campo, ','); venta.precioUnitario = stod(campo); // <-- Usar stod
-        getline(ss, campo, ','); venta.montoTotal = stod(campo);     // <-- Usar stod
+        getline(ss, v.medioEnvio, ',');
+        v.medioEnvio = trim(v.medioEnvio);
 
-        getline(ss, venta.medioEnvio, ',');
-        venta.medioEnvio = trim(venta.medioEnvio); // <-- Aplicar limpieza
-        // if needed: venta.medioEnvio = to_lower(venta.medioEnvio);
+        getline(ss, v.estadoEnvio);
+        v.estadoEnvio = trim(v.estadoEnvio);
 
+        ventas.push_back(v);
 
-        getline(ss, venta.estadoEnvio, '\n');
-        if (!venta.estadoEnvio.empty() && venta.estadoEnvio.back() == '\r') {
-            venta.estadoEnvio.pop_back();
-        }
-         venta.estadoEnvio = trim(venta.estadoEnvio); // <-- Aplicar limpieza
-        // if needed: venta.estadoEnvio = to_lower(venta.estadoEnvio);
-
-
-        vectorBaseDeDatos.push_back(venta); // <-- Insertamos en el vector
     }
-
+    int maxID = 0;
+    for (const auto& v : ventas) {
+        if (v.idVenta > maxID)
+            maxID = v.idVenta;
+    }
+    cout << "El proximo ID sera: " << maxID + 1 << endl;
     archivo.close();
-
-    // auto fin_lectura = chrono::high_resolution_clock::now(); // <--- Eliminado
-    // chrono::duration<double, milli> duracion_ms = fin_lectura - inicio_lectura; // <--- Eliminado
-
-    cout << "Base de datos procesada con exito. Total de ventas leidas: " << vectorBaseDeDatos.size() << endl; // <-- Usar .size()
-    // cout << "Tiempo de lectura y llenado de vector: " << duracion_ms.count() << " ms" << endl; // <--- Eliminado
+    cout << "Ventas cargadas correctamente. Total: " << ventas.size() << " registros." << endl;
 }
 
-
-// La función top5 ahora trabaja con vector<Venta> (por referencia constante)
-void top5VentasPorPaisCiudad(const vector<Venta>& vectorBD) { // <-- Recibe vector por referencia constante
-    unordered_map<string, unordered_map<string, double>> ventasPorPaisCiudad;
-
-    cout << "\nIniciando agregación de ventas por país y ciudad..." << endl; // Mensaje de progreso
-    // auto inicio_agregacion = chrono::high_resolution_clock::now(); // <--- Eliminado
-
-    // --- Bucle eficiente O(N) para recorrer el vector ---
-    for (const auto& ventaActual : vectorBD) { // <-- Bucle basado en rango (O(N))
-
-        // La lógica de agregación es la misma, usando las variables de la venta actual del vector
-        // Las claves ya deben estar limpias si aplicaste trim/tolower en procesar
-        unordered_map<string,double>& mapaCiudadesDelPais = ventasPorPaisCiudad[ventaActual.pais];
-        mapaCiudadesDelPais[ventaActual.ciudad] += ventaActual.montoTotal;
+// ======= FUNCIONES DE PROCESAMIENTO =======
+void calcularTopCiudades(const vector<Venta>& ventas) {
+    unordered_map<string, unordered_map<string, double>> ventasAcumuladas;
+    for (size_t i = 0; i < ventas.size(); ++i) {
+        ventasAcumuladas[ventas[i].pais][ventas[i].ciudad] += ventas[i].montoTotal;
     }
-    // --- Fin bucle de agregación ---
 
-    // auto fin_agregacion = chrono::high_resolution_clock::now(); // <--- Eliminado
-    // chrono::duration<double, micro> duracion_agregacion_us = fin_agregacion - inicio_agregacion; // <--- Eliminado
-    // cout << "Tiempo de agregación en el mapa (País/Ciudad): " << duracion_agregacion_us.count() << " us" << endl; // <--- Eliminado
+    for (unordered_map<string, unordered_map<string, double>>::const_iterator it = ventasAcumuladas.begin(); it != ventasAcumuladas.end(); ++it) {
+        const string& pais = it->first;
+        const unordered_map<string, double>& ciudades = it->second;
+        vector<pair<string, double>> ciudadesOrdenadas;
+        for (unordered_map<string, double>::const_iterator it2 = ciudades.begin(); it2 != ciudades.end(); ++it2) {
+            ciudadesOrdenadas.push_back(make_pair(it2->first, it2->second));
+        }
+        sort(ciudadesOrdenadas.begin(), ciudadesOrdenadas.end(), [](const pair<string, double>& a, const pair<string, double>& b) {
+            return a.second > b.second;
+        });
+        cout << "----------------------------\n";
+        cout << "Top 5 ciudades con mayor monto de ventas en " << pais << " (" << ciudadesOrdenadas.size() << " ciudades)\n";
+        cout << "----------------------------\n";
 
+        int limite = min(5, (int)ciudadesOrdenadas.size());
+        cout << fixed << setprecision(2);
+        for (int i = 0; i < limite; i++) {
+            cout << i+1 << ". " << ciudadesOrdenadas[i].first << " - $" << ciudadesOrdenadas[i].second << endl;
+        }
+        cout << endl;
+    }
+}
 
-    cout << "\n--- Top 5 Ciudades con Mayor Monto de Ventas por País ---" << endl;
-    // auto inicio_top5 = chrono::high_resolution_clock::now(); // <--- Eliminado
+void montoTotalPorProductoPorPais(const vector<Venta>& ventas) {
+    unordered_map<string, unordered_map<string, double>> montoPorProductoPorPais;
 
-    // Bucle exterior: Recorre el mapa principal (países)
-    for (const auto& [pais, mapaCiudades] : ventasPorPaisCiudad) {
+    // Acumular ventas por país y producto
+    for (size_t i = 0; i < ventas.size(); ++i) {
+        montoPorProductoPorPais[ventas[i].pais][ventas[i].producto] += ventas[i].montoTotal;
+    }
 
-        cout << "País: " << pais << ":" << endl;
+    cout << fixed << setprecision(2);
+    for (unordered_map<string, unordered_map<string, double>>::const_iterator it = montoPorProductoPorPais.begin();
+         it != montoPorProductoPorPais.end(); ++it) {
 
-        // Lógica para obtener el Top 5 para el país actual (copiar a vector y ordenar)
-        vector<pair<string, double>> ciudades_a_ordenar;
-        for (const auto& [ciudad, totalVentas] : mapaCiudades) {
-            ciudades_a_ordenar.push_back({ciudad, totalVentas});
+        const string& pais = it->first;
+        const unordered_map<string, double>& productos = it->second;
+
+        cout << "===============================\n";
+        cout << "PAÍS: " << pais << endl;
+
+        for (unordered_map<string, double>::const_iterator it2 = productos.begin(); it2 != productos.end(); ++it2) {
+            cout << "- " << it2->first << ": $" << it2->second << endl;
+        }
+        cout << endl;
+         }
+}
+
+void promedioVentasPorCategoriaPorPais(const vector<Venta>& ventas) {
+    unordered_map<string, unordered_map<string, pair<double, int>>> datosPorCategoriaPorPais;
+
+    // Acumular ventas y contar por país y categoría
+    for (size_t i = 0; i < ventas.size(); ++i) {
+        datosPorCategoriaPorPais[ventas[i].pais][ventas[i].categoria].first += ventas[i].montoTotal;
+        datosPorCategoriaPorPais[ventas[i].pais][ventas[i].categoria].second++;
+    }
+
+    cout << fixed << setprecision(2);
+    for (unordered_map<string, unordered_map<string, pair<double, int>>>::const_iterator it = datosPorCategoriaPorPais.begin();
+         it != datosPorCategoriaPorPais.end(); ++it) {
+
+        const string& pais = it->first;
+        const unordered_map<string, pair<double, int>>& categorias = it->second;
+
+        cout << "===============================\n";
+        cout << "PAÍS: " << pais << endl;
+
+        for (unordered_map<string, pair<double, int>>::const_iterator it2 = categorias.begin();
+             it2 != categorias.end(); ++it2) {
+
+            const string& categoria = it2->first;
+            double suma = it2->second.first;
+            int cantidad = it2->second.second;
+            double promedio = cantidad > 0 ? suma / cantidad : 0;
+
+            cout << "- Categoria: " << categoria << " - Promedio: $" << promedio << endl;
+             }
+
+        cout << endl;
+         }
+}
+
+void medioEnvioMasUtilizadoPorPais(const vector<Venta>& ventas) {
+    unordered_map<string, unordered_map<string, int>> conteoEnviosPorPais;
+
+    // Contar medios de envío por país
+    for (size_t i = 0; i < ventas.size(); ++i) {
+        conteoEnviosPorPais[ventas[i].pais][ventas[i].medioEnvio]++;
+    }
+
+    for (unordered_map<string, unordered_map<string, int>>::const_iterator it = conteoEnviosPorPais.begin();
+         it != conteoEnviosPorPais.end(); ++it) {
+
+        const string& pais = it->first;
+        const unordered_map<string, int>& envios = it->second;
+
+        string medioMasUsado;
+        int maxCantidad = 0;
+
+        for (unordered_map<string, int>::const_iterator it2 = envios.begin(); it2 != envios.end(); ++it2) {
+            if (it2->second > maxCantidad) {
+                maxCantidad = it2->second;
+                medioMasUsado = it2->first;
+            }
         }
 
-        sort(ciudades_a_ordenar.begin(), ciudades_a_ordenar.end(),
-                  [](const pair<string, double>& a, const pair<string, double>& b) {
-                      return a.second > b.second;
-                  });
+        cout << "PAÍS: " << pais << " Medio más usado: " << medioMasUsado << " (" << maxCantidad << " veces)" << endl;
+         }
+}
 
-        int count = 0;
-        for (const auto& pair : ciudades_a_ordenar) {
-            if (count < 5) {
-                cout << "  " << (count + 1) << ". " << pair.first << ": " << fixed << setprecision(2) << pair.second << endl;
-                count++;
-            } else {
+void medioEnvioMasUtilizadoPorCategoria(const vector<Venta>& ventas) {
+    unordered_map<string, unordered_map<string, int>> conteoEnviosPorCategoria;
+
+    // Contar medios de envío por categoría
+    for (size_t i = 0; i < ventas.size(); ++i) {
+        conteoEnviosPorCategoria[ventas[i].categoria][ventas[i].medioEnvio]++;
+    }
+
+    for (unordered_map<string, unordered_map<string, int>>::const_iterator it = conteoEnviosPorCategoria.begin();
+         it != conteoEnviosPorCategoria.end(); ++it) {
+
+        const string& categoria = it->first;
+        const unordered_map<string, int>& envios = it->second;
+
+        string medioMasUsado;
+        int maxCantidad = 0;
+
+        for (unordered_map<string, int>::const_iterator it2 = envios.begin(); it2 != envios.end(); ++it2) {
+            if (it2->second > maxCantidad) {
+                maxCantidad = it2->second;
+                medioMasUsado = it2->first;
+            }
+        }
+
+        cout << "CATEGORÍA: " << categoria << " Medio más usado: " << medioMasUsado << " (" << maxCantidad << " veces)" << endl;
+         }
+}
+
+void diaConMasVentas(const vector<Venta>& ventas) {
+    unordered_map<string, int> conteoPorFecha;
+
+    // Contar ventas por fecha
+    for (size_t i = 0; i < ventas.size(); ++i) {
+        conteoPorFecha[ventas[i].fecha]++;
+    }
+
+    string fechaMax;
+    int maxVentas = 0;
+
+    for (unordered_map<string, int>::const_iterator it = conteoPorFecha.begin();
+         it != conteoPorFecha.end(); ++it) {
+        if (it->second > maxVentas) {
+            maxVentas = it->second;
+            fechaMax = it->first;
+        }
+         }
+
+    if (!fechaMax.empty()) {
+        cout << "Día con más ventas: " << fechaMax << " (" << maxVentas << " ventas)" << endl;
+    } else {
+        cout << "No hay ventas registradas." << endl;
+    }
+}
+
+void estadoEnvioMasFrecuentePorPais(const vector<Venta>& ventas) {
+    unordered_map<string, unordered_map<string, int>> estadosPorPais;
+
+    // Contar estados de envío por país
+    for (size_t i = 0; i < ventas.size(); ++i) {
+        estadosPorPais[ventas[i].pais][ventas[i].estadoEnvio]++;
+    }
+
+    cout << "Estado de envío más frecuente por país:\n";
+
+    for (unordered_map<string, unordered_map<string, int>>::const_iterator it = estadosPorPais.begin();
+         it != estadosPorPais.end(); ++it) {
+
+        const string& pais = it->first;
+        const unordered_map<string, int>& estados = it->second;
+
+        string estadoMasFrecuente;
+        int maxCantidad = 0;
+
+        for (unordered_map<string, int>::const_iterator it2 = estados.begin(); it2 != estados.end(); ++it2) {
+            if (it2->second > maxCantidad) {
+                maxCantidad = it2->second;
+                estadoMasFrecuente = it2->first;
+            }
+        }
+
+        cout << "- " << pais << ": " << estadoMasFrecuente << " (" << maxCantidad << " veces)" << endl;
+         }
+}
+
+void productoMasVendido(const vector<Venta>& ventas) {
+    unordered_map<string, int> cantidadPorProducto;
+
+    // Acumular cantidades por producto
+    for (size_t i = 0; i < ventas.size(); ++i) {
+        cantidadPorProducto[ventas[i].producto] += ventas[i].cantidad;
+    }
+
+    string productoTop;
+    int maxCantidad = 0;
+
+    for (unordered_map<string, int>::const_iterator it = cantidadPorProducto.begin();
+         it != cantidadPorProducto.end(); ++it) {
+        if (it->second > maxCantidad) {
+            maxCantidad = it->second;
+            productoTop = it->first;
+        }
+    }
+
+    cout << "Producto más vendido en cantidad total:\n";
+    cout << "- " << productoTop << " (" << maxCantidad << " unidades vendidas)" << endl;
+}
+
+void productoMenosVendido(const vector<Venta>& ventas) {
+    unordered_map<string, int> cantidadPorProducto;
+
+    // Acumular cantidades por producto
+    for (size_t i = 0; i < ventas.size(); ++i) {
+        cantidadPorProducto[ventas[i].producto] += ventas[i].cantidad;
+    }
+
+    if (cantidadPorProducto.empty()) {
+        cout << "No hay productos registrados." << endl;
+        return;
+    }
+
+    string productoMin;
+    int minCantidad = numeric_limits<int>::max();
+
+    for (unordered_map<string, int>::const_iterator it = cantidadPorProducto.begin();
+         it != cantidadPorProducto.end(); ++it) {
+        if (it->second < minCantidad) {
+            minCantidad = it->second;
+            productoMin = it->first;
+        }
+         }
+
+    cout << "Producto menos vendido en cantidad total:\n";
+    cout << "- " << productoMin << " (" << minCantidad << " unidades vendidas)" << endl;
+}
+
+// ======= FUNCIONES DE MODIFICACIÓN =======
+void agregarVenta(vector<Venta>& ventas) {
+    // Implementación pendiente
+    cout << "Función en desarrollo..." << endl;
+    int maxID = 0;
+    for (const auto& v : ventas) {
+        if (v.idVenta > maxID)
+            maxID = v.idVenta;
+    }
+    cout << "ID: " << maxID+1 << endl;
+    cout<<"Fecha: "<<endl;
+    cout<<"Seleccione su pais de origen: "<<endl;
+    cout<<"1. Argentina"<<endl;
+    cout<<"2. Brasil"<<endl;
+    cout<<"3. Chile"<<endl;
+    cout<<"4. Colombia"<<endl;
+    cout<<"5. Ecuador"<<endl;
+    cout<<"6. Peru"<<endl;
+    cout<<"7. Uruguay"<<endl;
+    cout<<"8. Venezuela"<<endl;
+    cout<<"9. Otro"<<endl;
+    int opcion;
+    cin>>opcion;
+    cout<<"Ingrese su ciudad"<<endl;
+    string ciudad;
+    getline(cin,ciudad); //getline por si ingresa espacios
+    cout<<"Ingrese su nombre y apellido"<<endl;
+    string nombre;
+    getline(cin,nombre);
+    cout<<"Seleccione el producto que desea comprar: "<<endl;
+    cout<<"1. Auriculares"<<endl;
+    cout<<"2. Celular"<<endl;
+    cout<<"3. Cámara"<<endl;
+    cout<<"4. Escritorio"<<endl;
+    cout<<"5. Impresora"<<endl;
+    cout<<"6. Laptop"<<endl;
+    cout<<"7. Monitor"<<endl;
+    cout<<"8. Silla ergonómica"<<endl;
+    cout<<"9. Tablet"<<endl;
+    cout<<"10. Teclado"<<endl;
+    int opcion2;
+    cin>>opcion2;
+    //switch para que dependiendo el producto asigne automaticamente la categoria
+    cout<<"Ingrese la cantidad que desea comprar del producto: "<<endl;
+    int cantidad;
+    cin>>cantidad;
+    //asignar el precio automaticamente en base a la lista de precios (crear una)
+    int precio=0;
+
+    cout<<"El monto total a pagar es de: "<<precio*cantidad<<endl;
+    cout<<"Seleccione el medio de envio que prefiera: "<<endl;
+    int medioEnvio;
+    cout<<"1. Aéreo"<<endl;
+    cout<<"2. Marítimo"<<endl;
+    cout<<"3. Terreste"<<endl;
+    cin>>medioEnvio;
+
+}
+
+void modificarVenta(vector<Venta>& ventas) {
+    // Implementación pendiente
+    cout << "Función en desarrollo..." << endl;
+}
+
+void eliminarVenta(vector<Venta>& ventas) {
+    // Implementación pendiente
+    cout << "Función en desarrollo..." << endl;
+}
+
+// ======= FUNCIONES DE CONSULTAS =======
+void consultasDinamicas(const vector<Venta>& ventas) {
+    // Implementación pendiente
+    cout << "Función en desarrollo..." << endl;
+}
+
+// ======= FUNCIONES DE SUBMENU =======
+void menuResumenVentas(const vector<Venta>& ventas) {
+    int opcionResumen;
+    do {
+        cout << "\n--- Resumen de Ventas ---\n";
+        cout << "1. Top 5 ciudades con mayor monto por pais\n";
+        cout << "2. Monto total vendido por producto por pais\n";
+        cout << "3. Promedio de ventas por categoria por pais\n";
+        cout << "4. Medio de envio mas utilizado por pais\n";
+        cout << "5. Medio de envio mas utilizado por categoria\n";
+        cout << "6. Dia con mayor cantidad de ventas\n";
+        cout << "7. Estado de envio mas frecuente por pais\n";
+        cout << "8. Producto mas vendido en cantidad total\n";
+        cout << "9. Producto menos vendido en cantidad total\n";
+        cout << "10. Volver al menu principal\n";
+        cout << "Ingrese una opcion: ";
+        cin >> opcionResumen;
+
+        switch (opcionResumen) {
+            case 1: {
+                auto inicio = steady_clock::now();
+                calcularTopCiudades(ventas);
+                auto fin = steady_clock::now();
+                auto duracion = duration_cast<milliseconds>(fin - inicio).count();
+                cout << "Tiempo de ejecucion: " << duracion << " ms\n";
                 break;
             }
-        }
-
-        if (ciudades_a_ordenar.empty()) {
-             cout << "  (No hay datos de ventas para ciudades en este país)" <<endl;
-        }
-
-        cout << "--------------------" << endl;
-    }
-}
-
-
-// La función montoTotal ahora trabaja con vector<Venta> (por referencia constante)
-void montoTotalProductoXPais(const vector<Venta>& vectorBD) { // <-- Recibe vector por referencia constante
-    unordered_map<string, unordered_map<string, double>> montoPorPaisProducto;
-
-    cout << "\nIniciando agregación de ventas por producto y país..." << endl; // Mensaje de progreso
-
-    // --- Bucle eficiente O(N) para recorrer el vector ---
-    for (const auto& ventaActual : vectorBD) { // <-- Bucle basado en rango (O(N))
-
-        // La lógica de agregación es la misma
-        // Las claves ya deben estar limpias si aplicaste trim/tolower en procesar
-        unordered_map<string,double>& mapaProductosDelPais = montoPorPaisProducto[ventaActual.pais];
-        mapaProductosDelPais[ventaActual.producto] += ventaActual.montoTotal;
-    }
-     // --- Fin bucle de agregación ---
-
-    cout << "\n--- Ventas de productos discriminado por Pais ---" << endl;
-
-    // Bucle exterior: Recorre el mapa principal (países)
-    for (const auto& [pais, mapaProductosDelPais] : montoPorPaisProducto) {
-
-        cout << "País: " << pais << ":" << endl;
-
-        for (const auto& pair : mapaProductosDelPais) {
-                cout << "  - " << pair.first << ": " << fixed << setprecision(2) << pair.second << endl;
-        }
-
-        cout << "--------------------" << endl;
-    }
-
-
-}
-
-// Promedio de ventas por categoría en cada país
-void promVentasXCategoriaXPais(vector <Venta> vectorBD) {
-    struct datosVenta {
-        double totalVentas;
-        int cantidadVentas;
-    };
-
-    unordered_map<string, unordered_map<string, datosVenta>> promVentasPaisCategoria;
-    // --- Bucle eficiente O(N) para recorrer el vector ---
-    int i = 0; // Contador para saber cuantos productos de una categoria hay
-    for (const auto& ventaActual : vectorBD) { // <-- Bucle basado en rango (O(N))
-
-        // La lógica de agregación es la misma
-        // Las claves ya deben estar limpias si aplicaste trim/tolower en procesar
-        unordered_map<string,datosVenta>& mapaCategoriasVentas = promVentasPaisCategoria[ventaActual.pais];
-        mapaCategoriasVentas[ventaActual.categoria].totalVentas += ventaActual.montoTotal;
-        mapaCategoriasVentas[ventaActual.categoria].cantidadVentas++;
-
-    }
-    // --- Fin bucle de agregación ---
-
-    // Bucle exterior: Recorre el mapa principal (países)
-    for (const auto& [pais, mapaCategoriasVentas] : promVentasPaisCategoria) {
-        cout << "País: " << pais << ":" << endl;
-
-        for (const auto& pair : mapaCategoriasVentas) {
-            // Verifica si la cantidad es mayor que cero antes de dividir
-            if (pair.second.cantidadVentas > 0) {
-                double promedio = static_cast<double>(pair.second.totalVentas) / pair.second.cantidadVentas; // Asegurar división flotante
-                cout << "  - Promedio de venta de " << pair.first << ": "
-                     << fixed << setprecision(2) << promedio << endl;
-            } else {
-                // Manejar el caso donde la cantidad es 0 (aunque con tu lógica no debería pasar si el total > 0)
-                cout << "  - Promedio de venta de " << pair.first << ": Sin ventas registradas" << endl;
+            case 2: {
+                auto inicio = steady_clock::now();
+                montoTotalPorProductoPorPais(ventas);
+                auto fin = steady_clock::now();
+                auto duracion = duration_cast<milliseconds>(fin - inicio).count();
+                cout << "Tiempo de ejecucion: " << duracion << " ms\n";
+                break;
             }
-        }
-        cout << "--------------------" << endl;
-    }
-}
-
-// Medio de envío más utilizado por país
-void envioMasUtilPais(vector <Venta> vectorBD) {
-   unordered_map<string, unordered_map<string, int>> envioMasUtilizadoPais;
-    // --- Bucle eficiente O(N) para recorrer el vector ---
-    for (const auto& ventaActual : vectorBD) { // <-- Bucle basado en rango (O(N))
-
-        // La lógica de agregación es la misma
-        // Las claves ya deben estar limpias si aplicaste trim/tolower en procesar
-        unordered_map<string,int>& mapaConteos = envioMasUtilizadoPais[ventaActual.pais];
-        mapaConteos[ventaActual.medioEnvio]++;
-    }
-    // --- Fin bucle de agregación ---
-
-
-
-
-
-
-    cout << "\n--- Metodo de envio mas utilizado en cada Pais ---" << endl;
-
-    // Bucle exterior: Recorre el mapa principal (países)
-    for (const auto& [pais, mapaConteos] : envioMasUtilizadoPais) {
-
-        cout << "País: " << pais << ":" << endl;
-
-        //Encontra el medio mas utilizado
-
-        int max_conteo = -1; //Valor a comparar menor a cualquiera.
-        string metodoMasUsado = "";
-
-        for (const auto& [metodo, conteoEnvio] : mapaConteos) {
-            if (conteoEnvio > max_conteo) {
-                metodoMasUsado = metodo;
-                max_conteo = conteoEnvio;
+            case 3: {
+                auto inicio = steady_clock::now();
+                promedioVentasPorCategoriaPorPais(ventas);
+                auto fin = steady_clock::now();
+                auto duracion = duration_cast<milliseconds>(fin - inicio).count();
+                cout << "Tiempo de ejecucion: " << duracion << " ms\n";
+                break;
             }
-        }
-
-        // Imprimimos el metodo mas usado
-        cout << "  - " << metodoMasUsado << ": " <<  max_conteo << " envios" << endl;
-
-
-        cout << "--------------------" << endl;
-    }
-
-}
-// Medio de envío más utilizado por categoría
-void envioMasUtilCategoria(vector<Venta> vectorBD) {
-    unordered_map<string, unordered_map<string, int>> envioMasUtilizadoCategoria;
-    // --- Bucle eficiente O(N) para recorrer el vector ---
-    for (const auto& ventaActual : vectorBD) { // <-- Bucle basado en rango (O(N))
-
-        // La lógica de agregación es la misma
-        // Las claves ya deben estar limpias si aplicaste trim/tolower en procesar
-        unordered_map<string,int>& mapaConteos = envioMasUtilizadoCategoria[ventaActual.categoria];
-        mapaConteos[ventaActual.medioEnvio]++;
-    }
-    // --- Fin bucle de agregación ---
-
-
-    cout << "\n--- Metodo de envio mas utilizado en cada Categoria ---" << endl;
-
-    // Bucle exterior: Recorre el mapa principal (países)
-    for (const auto& [pais, mapaConteos] : envioMasUtilizadoCategoria) {
-
-        cout << "Categoria: " << pais << ":" << endl;
-
-        //Encontra el medio mas utilizado
-
-        int max_conteo = -1; //Valor a comparar menor a cualquiera.
-        string metodoMasUsado = "";
-
-        for (const auto& [metodo, conteoEnvio] : mapaConteos) {
-            if (conteoEnvio > max_conteo) {
-                metodoMasUsado = metodo;
-                max_conteo = conteoEnvio;
+            case 4: {
+                auto inicio = steady_clock::now();
+                medioEnvioMasUtilizadoPorPais(ventas);
+                auto fin = steady_clock::now();
+                auto duracion = duration_cast<milliseconds>(fin - inicio).count();
+                cout << "Tiempo de ejecucion: " << duracion << " ms\n";
+                break;
             }
-        }
-
-        // Imprimimos el metodo mas usado
-        cout << "  - " << metodoMasUsado << ": " <<  max_conteo << " envios" << endl;
-
-
-        cout << "--------------------" << endl;
-    }
-
-}
-// Día con mayor cantidad de ventas (por monto de dinero) en toda la base de datos
-void diaMasVentas(vector<Venta> vectorBD) {
-    unordered_map<string, double> ventasPorDia;
-    for (const auto& ventaActual : vectorBD) {
-        ventasPorDia[ventaActual.fecha] += ventaActual.montoTotal;
-    }
-    double max_monto = -1.0;
-    string fechaMasVentas = "";
-    for (const auto& [fecha, monto] : ventasPorDia) {
-        if (monto > max_monto) {
-            fechaMasVentas = fecha;
-            max_monto = monto;
-        }
-    }
-
-    cout<<"El Dia con mas ventas fue el "<<fechaMasVentas<< " Con un monto de $"<<max_monto<<endl;
-}
-// Estado de envío más frecuente por país
-void estadoEnvioMasFrecuenteXPais(vector <Venta> vectorBD) {
-    unordered_map<string, unordered_map<string, int>> estadoEnvioPais;
-    // --- Bucle eficiente O(N) para recorrer el vector ---
-    for (const auto& ventaActual : vectorBD) { // <-- Bucle basado en rango (O(N))
-
-        // La lógica de agregación es la misma
-        // Las claves ya deben estar limpias si aplicaste trim/tolower en procesar
-        unordered_map<string,int>& mapaConteoEstado = estadoEnvioPais[ventaActual.pais];
-        mapaConteoEstado[ventaActual.estadoEnvio]++;
-    }
-    // --- Fin bucle de agregación ---
-
-    cout << "\n--- Estado de de envio mas frecuente en cada Pais ---" << endl;
-
-    // Bucle exterior: Recorre el mapa principal (países)
-    for (const auto& [pais, mapaConteos] : estadoEnvioPais) {
-
-        cout << "País: " << pais << ":" << endl;
-
-        //Encontra el medio mas utilizado
-
-        int max_conteo = -1; //Valor a comparar menor a cualquiera.
-        string estadoMasUsado = "";
-
-        for (const auto& [metodo, conteoEnvio] : mapaConteos) {
-            if (conteoEnvio > max_conteo) {
-                estadoMasUsado = metodo;
-                max_conteo = conteoEnvio;
+            case 5: {
+                auto inicio = steady_clock::now();
+                medioEnvioMasUtilizadoPorCategoria(ventas);
+                auto fin = steady_clock::now();
+                auto duracion = duration_cast<milliseconds>(fin - inicio).count();
+                cout << "Tiempo de ejecucion: " << duracion << " ms\n";
+                break;
             }
+            case 6: {
+                auto inicio = steady_clock::now();
+                diaConMasVentas(ventas);
+                auto fin = steady_clock::now();
+                auto duracion = duration_cast<milliseconds>(fin - inicio).count();
+                cout << "Tiempo de ejecucion: " << duracion << " ms\n";
+                break;
+            }
+            case 7: {
+                auto inicio = steady_clock::now();
+                estadoEnvioMasFrecuentePorPais(ventas);
+                auto fin = steady_clock::now();
+                auto duracion = duration_cast<milliseconds>(fin - inicio).count();
+                cout << "Tiempo de ejecucion: " << duracion << " ms\n";
+                break;
+            }
+            case 8: {
+                auto inicio = steady_clock::now();
+                productoMasVendido(ventas);
+                auto fin = steady_clock::now();
+                auto duracion = duration_cast<milliseconds>(fin - inicio).count();
+                cout << "Tiempo de ejecucion: " << duracion << " ms\n";
+                break;
+            }
+            case 9: {
+                auto inicio = steady_clock::now();
+                productoMenosVendido(ventas);
+                auto fin = steady_clock::now();
+                auto duracion = duration_cast<milliseconds>(fin - inicio).count();
+                cout << "Tiempo de ejecucion: " << duracion << " ms\n";
+                break;
+            }
+            case 10:
+                cout << "Volviendo al menu principal...\n";
+                break;
+            default:
+                cout << "Opcion invalida. Intente de nuevo.\n";
         }
 
-        // Imprimimos el metodo mas usado
-        cout << "  - " << estadoMasUsado << ": " <<  max_conteo << " envios" << endl;
-
-
-        cout << "--------------------" << endl;
-    }
-
-}
-// Producto más vendido en cantidad total (no en dinero, sino en unidades)
-    void productoMasVendido(vector <Venta> vectorBD) {
-    unordered_map<string, int> productosVendidos;
-    for (const auto& ventaActual : vectorBD) {
-        productosVendidos[ventaActual.producto] += ventaActual.cantidad;
-    }
-
-    int max_conteo = -1;
-    string nombre_producto = "";
-    for (const auto& [producto, contador] : productosVendidos) {
-        if (max_conteo < contador) {
-            max_conteo = contador;
-            nombre_producto = producto;
-        }
-    }
-
-    cout<<"El Producto mas vendido es: "<<nombre_producto<<" Con una cantidad de "<<max_conteo<<" unidades vendidas."<<endl;
-
-}
-// Producto menos vendido en cantidad total
-    void productoMenosVendido(vector <Venta> vectorBD) {
-    unordered_map<string, int> productosVendidos;
-    for (const auto& ventaActual : vectorBD) {
-        productosVendidos[ventaActual.producto] += ventaActual.cantidad;
-    }
-
-    // Inicializar el mínimo con el valor máximo posible para int.
-    // Esto asegura que la cantidad del primer producto que encontremos sea menor o igual a menos_vendido.
-    int menos_vendido = numeric_limits<int>::max();
-
-    string nombre_producto = "";
-    for (const auto& [producto, contador] : productosVendidos) {
-        if (menos_vendido > contador) {
-            menos_vendido = contador;
-            nombre_producto = producto;
-        }
-    }
-
-    cout<<"El Producto menos vendido es: "<<nombre_producto<<" Con una cantidad de "<<menos_vendido<<" unidades vendidas."<<endl;
-
-
+    } while (opcionResumen != 10);
 }
 
-
-void modificaciones() {
-    //Agregar una venta (guiando al usuario paso a paso para ingresar todos los campos)
-    //Eliminar una venta (El usuario ingresarà un pais o una ciudad y el programa filtrarà mostrando lo seleccionado)
-    //Modificar una venta (selección por ID de venta; permitir modificar cualquier campo) ACA PODEMOS USAR UN ARBOLLL
-    //Reprocesar
-}
-
-void consultas() {
-    //El listado de ventas realizadas en una ciudad específica
-    //El listado de ventas realizadas en un rango de fechas por país
-    //Comparación entre dos países:
-        //a.monto total de ventas
-        //b.productos más vendidos
-        //c.medio de envío más usado
-    //Comparación entre dos productos discriminado por todos los paises:
-        //a. cantidad total vendida
-        //b. monto total
-    //Buscar productos vendidos en promedio por debajo de un monto total especificado por el usuario(umbral) y por paìs
-}
-
+// ======= FUNCIÓN MAIN =======
 int main() {
-    SetConsoleOutputCP(CP_UTF8); // UTF-8 Para arreglar outputs de la consola.
-    // Declaramos un vector en lugar de Lista
-    vector<Venta> vectorBaseDeDatos;
-
-    cout<<"Procesando base de datos espere un momento..."<<endl;
-
-    // Llamamos a procesar, pasando el vector
-    procesar(vectorBaseDeDatos);
-
-    // Llamamos a las funciones de análisis, pasando el vector
-    top5VentasPorPaisCiudad(vectorBaseDeDatos);
-    montoTotalProductoXPais(vectorBaseDeDatos);
-    promVentasXCategoriaXPais(vectorBaseDeDatos);
-    envioMasUtilPais(vectorBaseDeDatos);
-    envioMasUtilCategoria(vectorBaseDeDatos);
-    diaMasVentas(vectorBaseDeDatos);
-    estadoEnvioMasFrecuenteXPais(vectorBaseDeDatos);
-    productoMasVendido(vectorBaseDeDatos);
-    productoMenosVendido(vectorBaseDeDatos);
+    vector<Venta> ventas;
     int opcion;
+
     do {
-        cout<<"MENU"<<endl;
-        cout<<endl;
-        cout<<"1.Modificar"<<endl;
-        cout<<"2."<<endl;
-        cout<<"3."<<endl;
-        cout<<"4."<<endl;
-        cout<<"5."<<endl;
-        cout<<"6.Salir"<<endl;
-        cout<<"Ingrese una opcion:"<<endl;
-        cin>>opcion;
+        cout << "\n====== MENU ======" << endl;
+        cout << "1. Cargar datos" << endl;
+        cout << "2. Modificar una venta" << endl;
+        cout << "3. Agregar una venta" << endl;
+        cout << "4. Eliminar una venta" << endl;
+        cout << "5. Consultas dinámicas" << endl;
+        cout << "6. Mostrar resumen de ventas" << endl;
+        cout << "7. Salir" << endl;
+        cout << "Ingrese una opcion: ";
+        cin >> opcion;
+
         switch (opcion) {
             case 1:
-                // modificaciones(vectorBaseDeDatos); // Pasar el vector si la funcion lo necesita
+                cout << "Procesando base de datos, espere un momento..." << endl;
+                cargarVentas(ventas);
                 break;
             case 2:
-                // consultas(vectorBaseDeDatos); // Pasar el vector si la funcion lo necesita
+                modificarVenta(ventas);
                 break;
             case 3:
+                agregarVenta(ventas);
                 break;
             case 4:
+                eliminarVenta(ventas);
                 break;
             case 5:
+                consultasDinamicas(ventas);
                 break;
             case 6:
+                if (ventas.empty()) {
+                    cout << "Primero debe cargar los datos (opción 1)." << endl;
+                } else {
+                    menuResumenVentas(ventas);
+                }
                 break;
-            default: cout<<"Error"<<endl;
-            break;
+            case 7:
+                cout << "Saliendo..." << endl;
+                break;
+            default:
+                cout << "Opcion incorrecta, intente nuevamente." << endl;
+                break;
         }
-    }while(opcion!=6);
-cout<<"Saliendo..."<<endl;
+    } while (opcion != 7);
+
+    return 0;
 }
