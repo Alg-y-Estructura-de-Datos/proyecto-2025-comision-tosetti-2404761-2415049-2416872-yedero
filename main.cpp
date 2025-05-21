@@ -8,6 +8,7 @@
 #include <sstream>
 #include <iomanip>
 #include <chrono>
+#include <ctime>
 
 #define BASE_DE_DATOS "C:/Codigos/ventas_sudamerica.csv"
 
@@ -57,7 +58,9 @@ void cargarVentas(vector<Venta>& ventas) {
         string campo;
         Venta v;
 
-        getline(ss, campo, ','); v.idVenta = stoi(campo);
+        getline(ss, campo, ',');
+        if (campo.empty()) continue; // Salta líneas mal formateadas
+        v.idVenta = stoi(campo);
         getline(ss, v.fecha, ',');
 
         getline(ss, v.pais, ',');
@@ -92,7 +95,6 @@ void cargarVentas(vector<Venta>& ventas) {
         if (v.idVenta > maxID)
             maxID = v.idVenta;
     }
-    cout << "El proximo ID sera: " << maxID + 1 << endl;
     archivo.close();
     cout << "Ventas cargadas correctamente. Total: " << ventas.size() << " registros." << endl;
 }
@@ -349,62 +351,263 @@ void productoMenosVendido(const vector<Venta>& ventas) {
     cout << "- " << productoMin << " (" << minCantidad << " unidades vendidas)" << endl;
 }
 
+string obtenerFechaActual() {
+    time_t t = time(nullptr);                       // Obtener tiempo actual
+    tm* ahora = localtime(&t);                      // Convertir a hora local
+    stringstream ss;
+    ss << put_time(ahora, "%d/%m/%Y");              // Formato deseado
+    return ss.str();
+}
+
 // ======= FUNCIONES DE MODIFICACIÓN =======
-void agregarVenta(vector<Venta>& ventas) {
-    // Implementación pendiente
-    cout << "Función en desarrollo..." << endl;
+void agregarVenta(vector<Venta>& ventas, Venta v) {
+
+    ofstream archivo(BASE_DE_DATOS, ios::app); // modo append
+    if (!archivo.is_open()) {
+        cout << "No se pudo abrir el archivo para escritura." << endl;
+        return;
+    }
+
     int maxID = 0;
     for (const auto& v : ventas) {
         if (v.idVenta > maxID)
             maxID = v.idVenta;
     }
+    v.idVenta = maxID+1;
     cout << "ID: " << maxID+1 << endl;
-    cout<<"Fecha: "<<endl;
-    cout<<"Seleccione su pais de origen: "<<endl;
-    cout<<"1. Argentina"<<endl;
-    cout<<"2. Brasil"<<endl;
-    cout<<"3. Chile"<<endl;
-    cout<<"4. Colombia"<<endl;
-    cout<<"5. Ecuador"<<endl;
-    cout<<"6. Peru"<<endl;
-    cout<<"7. Uruguay"<<endl;
-    cout<<"8. Venezuela"<<endl;
-    cout<<"9. Otro"<<endl;
-    int opcion;
-    cin>>opcion;
-    cout<<"Ingrese su ciudad"<<endl;
-    string ciudad;
-    getline(cin,ciudad); //getline por si ingresa espacios
-    cout<<"Ingrese su nombre y apellido"<<endl;
-    string nombre;
-    getline(cin,nombre);
-    cout<<"Seleccione el producto que desea comprar: "<<endl;
-    cout<<"1. Auriculares"<<endl;
-    cout<<"2. Celular"<<endl;
-    cout<<"3. Cámara"<<endl;
-    cout<<"4. Escritorio"<<endl;
-    cout<<"5. Impresora"<<endl;
-    cout<<"6. Laptop"<<endl;
-    cout<<"7. Monitor"<<endl;
-    cout<<"8. Silla ergonómica"<<endl;
-    cout<<"9. Tablet"<<endl;
-    cout<<"10. Teclado"<<endl;
-    int opcion2;
-    cin>>opcion2;
-    //switch para que dependiendo el producto asigne automaticamente la categoria
-    cout<<"Ingrese la cantidad que desea comprar del producto: "<<endl;
-    int cantidad;
-    cin>>cantidad;
-    //asignar el precio automaticamente en base a la lista de precios (crear una)
-    int precio=0;
 
-    cout<<"El monto total a pagar es de: "<<precio*cantidad<<endl;
-    cout<<"Seleccione el medio de envio que prefiera: "<<endl;
-    int medioEnvio;
-    cout<<"1. Aéreo"<<endl;
-    cout<<"2. Marítimo"<<endl;
-    cout<<"3. Terreste"<<endl;
-    cin>>medioEnvio;
+    v.fecha=obtenerFechaActual();
+    cout<<"Fecha: "<<v.fecha<<endl;
+
+    int opcion = 0;
+    string entrada;
+    bool entradaValida = false;
+
+    do {
+        cout << "Seleccione su pais de origen: " << endl;
+        cout << "1. Argentina\n2. Brasil\n3. Chile\n4. Colombia\n5. Ecuador\n6. Peru\n7. Uruguay\n8. Venezuela" << endl;
+        cout << "Opcion: ";
+        cin >> entrada;
+
+        try {
+            opcion = stoi(entrada);
+            if (opcion < 1 || opcion > 8) {
+                cout << "Opcion fuera de rango. Intente nuevamente.\n";
+            } else {
+                entradaValida = true;
+            }
+        } catch (const exception& e) {
+            cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+        }
+
+    } while (!entradaValida);
+
+    // Asignación del país
+    switch (opcion) {
+        case 1: v.pais = "Argentina"; break;
+        case 2: v.pais = "Brasil"; break;
+        case 3: v.pais = "Chile"; break;
+        case 4: v.pais = "Colombia"; break;
+        case 5: v.pais = "Ecuador"; break;
+        case 6: v.pais = "Peru"; break;
+        case 7: v.pais = "Uruguay"; break;
+        case 8: v.pais = "Venezuela"; break;
+        default: ;
+    }
+
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    cout<<"Ingrese su ciudad"<<endl;
+    try {
+        getline(cin,v.ciudad); //getline por si ingresa espacios
+    }
+    catch (const exception& e) {
+        cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+        cin.clear(); // limpiar estado de error
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // limpiar buffer
+    }
+
+
+    cout<<"Ingrese su nombre y apellido"<<endl;
+    getline(cin,v.cliente);
+
+
+    int opcion2=0;
+    string entrada2;
+    bool entrada2Valida = false;
+
+    do{
+        cout<<"Seleccione el producto que desea comprar: "<<endl;
+        cout<<"1. Auriculares"<<endl;
+        cout<<"2. Celular"<<endl;
+        cout<<"3. Cámara"<<endl;
+        cout<<"4. Escritorio"<<endl;
+        cout<<"5. Impresora"<<endl;
+        cout<<"6. Laptop"<<endl;
+        cout<<"7. Monitor"<<endl;
+        cout<<"8. Silla ergonómica"<<endl;
+        cout<<"9. Tablet"<<endl;
+        cout<<"10. Teclado"<<endl;
+        cin>>entrada2;
+        try {
+            opcion2 = stoi(entrada2);
+            if (opcion < 1 || opcion > 10) {
+                cout << "Opcion fuera de rango. Intente nuevamente.\n";
+            } else {
+                entrada2Valida = true;
+            }
+        }
+        catch (const exception& e) {
+        cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+        }
+    } while (!entrada2Valida);
+
+
+        switch (opcion2) {
+            case 1:
+                v.producto="Auriculares";
+                break;
+            case 2:
+                v.producto="Celular";
+                break;
+            case 3:
+                v.producto="Cámara";
+                break;
+            case 4:
+                v.producto="Escritorio";
+                break;
+            case 5:
+                v.producto="Impresora";
+                break;
+            case 6:
+                v.producto="Laptop";
+                break;
+            case 7:
+                v.producto="Monitor";
+                break;
+            case 8:
+                v.producto="Silla ergonómica";
+                break;
+            case 9:
+                v.producto="Tablet";
+                break;
+            case 10:
+                v.producto="Teclado";
+                break;
+            default: cout<<"Opcion incorrecta intente nuevamente"<<endl;
+        }
+
+    //switch para que dependiendo el producto asigne automaticamente la categoria
+    switch (opcion2) {
+        case 1:
+        case 10:
+            v.categoria="Accesorios";
+            break;
+        case 2:
+        case 3:
+        case 6:
+        case 7:
+        case 9:
+            v.categoria="Electronica";
+            break;
+        case 4:
+        case 8:
+            v.categoria="Muebles";
+            break;
+        case 5:
+            v.categoria="Oficina";
+            break;
+        default: cout<<"Error"<<endl;
+    }
+
+    string cantidad;
+    bool cantidadValida = false;
+    do {
+        try {
+            cout<<"Ingrese la cantidad a comprar: "<<endl;
+            cin>>cantidad;
+            v.cantidad=stoi(cantidad);
+            if (v.cantidad <= 0) {
+                cout << "La cantidad debe ser mayor que cero.\n";
+            } else {
+                cantidadValida = true;
+            }
+        }
+        catch (const exception& e) {
+            cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+        }
+    }while (!cantidadValida);
+
+
+    string entradaPrecio;
+    bool precioValido = false;
+
+    do {
+        cout << "Ingrese el precio del producto: " << endl;
+        cin >> entradaPrecio;
+
+        try {
+            v.precioUnitario = stod(entradaPrecio);
+            if (v.precioUnitario <= 0) {
+                cout << "El precio debe ser mayor que cero.\n";
+            } else {
+                precioValido = true;
+            }
+        } catch (const exception& e) {
+            cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+        }
+    } while (!precioValido);
+
+
+    v.montoTotal=v.cantidad*v.precioUnitario;
+    cout<<"El monto total a pagar es de: "<<v.montoTotal<<endl;
+
+    int medioEnvio = 0;
+    string entradaMedio;
+    bool medioValido = false;
+
+    do {
+        cout << "Seleccione el medio de envio:\n";
+        cout << "1. Terrestre\n2. Maritimo\n3. Aereo\n";
+        cout << "Opcion: ";
+        cin >> entradaMedio;
+
+        try {
+            medioEnvio = stoi(entradaMedio);
+
+            if (medioEnvio < 1 || medioEnvio > 3) {
+                cout << "Opcion fuera de rango. Intente nuevamente.\n";
+            } else {
+                medioValido = true;
+            }
+        } catch (const exception& e) {
+            cout << "Entrada invalida: " << e.what() << ". Intente nuevamente.\n";
+        }
+    } while (!medioValido);
+
+    // Asignar el string correspondiente al enum elegido
+    switch (medioEnvio) {
+        case 1: v.medioEnvio = "Terrestre"; break;
+        case 2: v.medioEnvio = "Marítimo"; break;
+        case 3: v.medioEnvio = "Aéreo"; break;
+    }
+
+    v.estadoEnvio="Pendiente";
+
+    archivo<<v.idVenta<<",";
+    archivo<<v.fecha<<",";
+    archivo<<v.pais<<",";
+    archivo<<v.ciudad<<",";
+    archivo<<v.cliente<<",";
+    archivo<<v.producto<<",";
+    archivo<<v.categoria<<",";
+    archivo<<v.cantidad<<",";
+    archivo<<v.precioUnitario<<",";
+    archivo<<v.montoTotal<<",";
+    archivo<<v.medioEnvio<<",";
+    archivo<<v.estadoEnvio<<endl;
+    archivo.close();
+    cout << "Venta guardada correctamente en el archivo CSV." << endl;
+
 
 }
 
@@ -528,9 +731,13 @@ void menuResumenVentas(const vector<Venta>& ventas) {
 // ======= FUNCIÓN MAIN =======
 int main() {
     vector<Venta> ventas;
+    Venta v;
+    cout << "Procesando base de datos, espere un momento..." << endl;
+
     int opcion;
 
     do {
+        cargarVentas(ventas);
         cout << "\n====== MENU ======" << endl;
         cout << "1. Cargar datos" << endl;
         cout << "2. Modificar una venta" << endl;
@@ -544,14 +751,14 @@ int main() {
 
         switch (opcion) {
             case 1:
-                cout << "Procesando base de datos, espere un momento..." << endl;
-                cargarVentas(ventas);
+                    cout<<"Nos equivocamos"<<endl;
                 break;
             case 2:
                 modificarVenta(ventas);
+
                 break;
             case 3:
-                agregarVenta(ventas);
+                agregarVenta(ventas, v);
                 break;
             case 4:
                 eliminarVenta(ventas);
