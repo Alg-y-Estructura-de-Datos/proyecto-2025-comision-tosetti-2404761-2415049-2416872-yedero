@@ -1,36 +1,27 @@
 #include <vector>
-#include <unordered_map>
-#include <algorithm>
+#include <unordered_map> // Tabla hash estandar de c++
+#include <algorithm> // La usamos para ordenar
 #include <iostream>
 #include <string>
-#include <fstream>
-#include <limits>
-#include <sstream>
+#include <fstream> // Para leer nuestro archivo CSV
+#include <limits> // Lo usamos para limpiar el buffer de entrada
+#include <sstream> // Para leer nuestro archivo CSV
 #include <iomanip>
-#include <chrono>
-#include <ctime>
+#include <chrono> // Para medir tiempos de ejecución
+#include <ctime> // En nuestra función fechaAEntero para la lógica de conversión.
+#include "Arbol/ArbolBinarioAVL.h"
+#include "Estructuras.h"
+#include "Consultas.h"
 
 // Asegúrate de que esta ruta sea correcta para tu entorno.
-#define BASE_DE_DATOS "../ventas_sudamerica.csv"
+#define BASE_DE_DATOS "ventas_sudamerica.csv"
 
 using namespace std;
-using namespace std::chrono;
+using namespace chrono;
 
-// ======= ESTRUCTURAS Y DEFINICIONES =======
-struct Venta {
-    int idVenta{};
-    string fecha;
-    string pais;
-    string ciudad;
-    string cliente;
-    string producto;
-    string categoria;
-    int cantidad{};
-    double precioUnitario{};
-    double montoTotal{};
-    string medioEnvio;
-    string estadoEnvio;
-};
+
+
+
 
 // Variable global para almacenar el encabezado del CSV.
 // Es una solución simple para este caso; en una aplicación más grande,
@@ -57,9 +48,10 @@ string obtenerFechaActual() {
     ss << put_time(ltm, "%Y-%m-%d"); // Formato AAAA-MM-DD
     return ss.str();
 }
-
 // ======= FUNCIONES DE CARGA CSV =======
 void cargarVentas(vector<Venta>& ventas) {
+
+
     ifstream archivo(BASE_DE_DATOS);
     if (!archivo.is_open()) {
         // En lugar de salir, podrías crear el archivo si no existe
@@ -119,6 +111,26 @@ void cargarVentas(vector<Venta>& ventas) {
     archivo.close();
     cout << "Ventas cargadas correctamente. Total: " << ventas.size() << " registros." << endl;
 }
+
+
+// Esta función toma el vector de ventas crudas y crea el mapa agregado
+void procesarDatosAgregados(const vector<Venta>& todasLasVentas, MapaPaises& datosAgregados) {
+    // Limpiamos el mapa por si tenía datos anteriores
+    datosAgregados.clear();
+
+    for (const auto& v : todasLasVentas) {
+        // La magia del operador[] de unordered_map hace esto increíblemente simple.
+        // Si la clave no existe, la crea; si existe, devuelve una referencia al valor.
+        EstadisticasAgregadas& stats = datosAgregados[v.pais][v.producto];
+
+        // Actualizamos las estadísticas directamente.
+        stats.montoTotalVendido += v.montoTotal;
+        stats.cantidadTotalVendida += v.cantidad;
+        stats.conteoMediosEnvio[v.medioEnvio]++;
+    }
+    cout << "Datos procesados para consultas analiticas." << endl;
+}
+
 
 // ======= FUNCIONES DE MODIFICACIÓN =======
 void agregarVenta(vector<Venta>& ventas, Venta v) {
@@ -197,7 +209,7 @@ void agregarVenta(vector<Venta>& ventas, Venta v) {
         case 6: v.pais = "Peru"; break;
         case 7: v.pais = "Uruguay"; break;
         case 8: v.pais = "Venezuela"; break;
-        default: ; // Debería ser inalcanzable debido a la validación.
+        default: ; // Nunca deberiamos llegar debido a la validación.
     }
 
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -368,317 +380,354 @@ void agregarVenta(vector<Venta>& ventas, Venta v) {
 }
 
 
-void modificarVenta(std::vector<Venta>& bdVector) {
-    // 1. Crear un mapa hash para acceso rápido.
-    std::unordered_map<int, Venta*> bdHashMap;
-    for (Venta& v : bdVector) {
-        bdHashMap[v.idVenta] = &v;
+void modificarVenta(vector<Venta>& bdVector) {
+    if (bdVector.empty()) {
+        cout << "La base de datos (vector) está vacía. No hay ventas para modificar.\n";
+        return;
+    }
+
+    // 1. Crear un Árbol AVL para acceso rápido y validación de existencia.
+    ArbolBinarioAVL<Venta> arbolDeVentas;
+    for (const auto& ventaActual : bdVector) {
+        arbolDeVentas.put(ventaActual); // introducimos todas las ventas en un árbol Balanceado
     }
 
     // 2. Solicitar el ID de la venta a modificar.
-    int idModificar;
-    std::string entradaID;
+    int idModificarNum;
+    string entradaID;
     bool idValido = false;
+    Venta ventaParaBuscar; // Venta temporal para usar en la búsqueda del árbol
 
     do {
-        std::cout << "Ingrese el ID de la venta que desea modificar: ";
-        std::cin >> entradaID;
+        cout << "Ingrese el ID de la venta que desea modificar: ";
+        cin >> entradaID;
         try {
-            idModificar = std::stoi(entradaID);
-            if (bdHashMap.count(idModificar)) {
-                idValido = true;
-            } else {
-                std::cout << "ID de venta no encontrado. Intente nuevamente.\n";
-            }
-        } catch (const std::exception& e) {
-            std::cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
-            std::cin.clear();
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            idModificarNum = stoi(entradaID);
+            ventaParaBuscar.idVenta = idModificarNum; // Asignar el ID a la venta de búsqueda
+
+            // Intentar buscar en el árbol AVL para validar la existencia del ID
+            // Asumimos que arbol.search() lanza una excepción si no encuentra el elemento.
+            // El valor devuelto por search() no se usa directamente aquí, solo se verifica la existencia.
+            arbolDeVentas.search(ventaParaBuscar);
+            idValido = true; // Si search() no lanzó excepción, el ID existe
+
+        } catch (const invalid_argument& e_stoi) {
+            cout << "Entrada inválida para ID (no es un número): " << e_stoi.what() << ". Intente nuevamente.\n";
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        } catch (const out_of_range& e_stoi_range) {
+            cout << "Entrada inválida para ID (número fuera de rango): " << e_stoi_range.what() << ". Intente nuevamente.\n";
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        } catch (const exception& e_avl) { // Captura la excepción esperada de arbol.search si no encuentra
+            cout << "ID de venta no encontrado en el árbol: " << e_avl.what() << ". Intente nuevamente.\n";
+            // idValido permanece false
+             cin.clear(); // Limpiar flags de error de cin
+             cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Descartar entrada incorrecta
         }
     } while (!idValido);
 
-    Venta* ventaAModificar = bdHashMap[idModificar];
+    // El ID es válido y existe en el árbol. Ahora obtenemos una referencia a la venta en bdVector.
+    Venta* ventaAModificarEnVector = nullptr;
+    for (size_t i = 0; i < bdVector.size(); ++i) {
+        if (bdVector[i].idVenta == idModificarNum) {
+            ventaAModificarEnVector = &bdVector[i];
+            break;
+        }
+    }
 
-    // 3. Mostrar los detalles de la venta seleccionada.
-    std::cout << "\n--- Venta seleccionada para modificar ---\n";
-    std::cout << "ID: " << ventaAModificar->idVenta << std::endl;
-    std::cout << "Fecha: " << ventaAModificar->fecha << std::endl;
-    std::cout << "País: " << ventaAModificar->pais << std::endl;
-    std::cout << "Ciudad: " << ventaAModificar->ciudad << std::endl;
-    std::cout << "Cliente: " << ventaAModificar->cliente << std::endl;
-    std::cout << "Producto: " << ventaAModificar->producto << std::endl;
-    std::cout << "Categoría: " << ventaAModificar->categoria << std::endl;
-    std::cout << "Cantidad: " << ventaAModificar->cantidad << std::endl;
-    std::cout << "Precio unitario: " << std::fixed << std::setprecision(2) << ventaAModificar->precioUnitario << std::endl;
-    std::cout << "Monto total: " << std::fixed << std::setprecision(2) << ventaAModificar->montoTotal << std::endl;
-    std::cout << "Medio de envío: " << ventaAModificar->medioEnvio << std::endl;
-    std::cout << "Estado de envío: " << ventaAModificar->estadoEnvio << std::endl;
-    std::cout << "--------------------------------------\n";
+    if (!ventaAModificarEnVector) {
+        // Esto no debería ocurrir si el árbol se construyó correctamente desde bdVector y el ID se validó.
+        cout << "Error crítico: El ID fue validado pero la venta no se encontró en el vector fuente. Abortando modificación.\n";
+        return;
+    }
+
+    // 3. Mostrar los detalles de la venta seleccionada (usando el puntero al objeto en bdVector).
+    cout << "\n--- Venta seleccionada para modificar ---\n";
+    cout << "ID: " << ventaAModificarEnVector->idVenta << endl;
+    cout << "Fecha: " << ventaAModificarEnVector->fecha << endl;
+    cout << "País: " << ventaAModificarEnVector->pais << endl;
+    cout << "Ciudad: " << ventaAModificarEnVector->ciudad << endl;
+    cout << "Cliente: " << ventaAModificarEnVector->cliente << endl;
+    cout << "Producto: " << ventaAModificarEnVector->producto << endl;
+    cout << "Categoría: " << ventaAModificarEnVector->categoria << endl;
+    cout << "Cantidad: " << ventaAModificarEnVector->cantidad << endl;
+    cout << "Precio unitario: " << fixed << setprecision(2) << ventaAModificarEnVector->precioUnitario << endl;
+    cout << "Monto total: " << fixed << setprecision(2) << ventaAModificarEnVector->montoTotal << endl;
+    cout << "Medio de envío: " << ventaAModificarEnVector->medioEnvio << endl;
+    cout << "Estado de envío: " << ventaAModificarEnVector->estadoEnvio << endl;
+    cout << "--------------------------------------\n";
 
     // 4. Solicitar el campo a modificar.
     int opcionCampo;
-    std::string entradaCampo;
+    string entradaCampo;
     bool campoValido = false;
 
     do {
-        std::cout << "\n¿Qué campo desea modificar?\n";
-        std::cout << "1. País\n";
-        std::cout << "2. Ciudad\n";
-        std::cout << "3. Cliente\n";
-        std::cout << "4. Producto\n";
-        std::cout << "5. Cantidad\n";
-        std::cout << "6. Precio Unitario\n";
-        std::cout << "7. Medio de Envío\n";
-        std::cout << "8. Estado de Envío\n";
-        std::cout << "Opción: ";
-        std::cin >> entradaCampo;
+        cout << "\n¿Qué campo desea modificar?\n";
+        cout << "1. País\n";
+        cout << "2. Ciudad\n";
+        cout << "3. Cliente\n";
+        cout << "4. Producto\n"; // Modifica Producto y Categoría
+        cout << "5. Cantidad\n";
+        cout << "6. Precio Unitario\n";
+        cout << "7. Medio de Envío\n";
+        cout << "8. Estado de Envío\n";
+        cout << "Opción: ";
+        cin >> entradaCampo;
 
         try {
-            opcionCampo = std::stoi(entradaCampo);
+            opcionCampo = stoi(entradaCampo);
             if (opcionCampo >= 1 && opcionCampo <= 8) {
                 campoValido = true;
             } else {
-                std::cout << "Opción fuera de rango. Intente nuevamente.\n";
+                cout << "Opción fuera de rango. Intente nuevamente.\n";
             }
-        } catch (const std::exception& e) {
-            std::cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
-            std::cin.clear();
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        } catch (const exception& e) {
+            cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
         }
     } while (!campoValido);
 
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Limpiar buffer para getline
 
     // 5. Aplicar la modificación según el campo seleccionado.
+    // Las modificaciones se hacen directamente en ventaAModificarEnVector.
     switch (opcionCampo) {
         case 1: { // Modificar País
             int opcionPais = 0;
-            std::string entradaPais;
+            string entradaPais;
             bool paisValido = false;
             do {
-                std::cout << "Seleccione el nuevo país:\n";
-                std::cout << "1. Argentina\n2. Brasil\n3. Chile\n4. Colombia\n5. Ecuador\n6. Peru\n7. Uruguay\n8. Venezuela\n";
-                std::cout << "Opción: ";
-                std::cin >> entradaPais;
+                cout << "Seleccione el nuevo país:\n";
+                cout << "1. Argentina\n2. Brasil\n3. Chile\n4. Colombia\n5. Ecuador\n6. Peru\n7. Uruguay\n8. Venezuela\n";
+                cout << "Opción: ";
+                cin >> entradaPais;
                 try {
-                    opcionPais = std::stoi(entradaPais);
+                    opcionPais = stoi(entradaPais);
                     if (opcionPais >= 1 && opcionPais <= 8) {
                         paisValido = true;
                     } else {
-                        std::cout << "Opción fuera de rango. Intente nuevamente.\n";
+                        cout << "Opción fuera de rango. Intente nuevamente.\n";
                     }
-                } catch (const std::exception& e) {
-                    std::cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
-                    std::cin.clear();
-                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                } catch (const exception& e) {
+                    cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 }
             } while (!paisValido);
             switch (opcionPais) {
-                case 1: ventaAModificar->pais = "Argentina"; break;
-                case 2: ventaAModificar->pais = "Brasil"; break;
-                case 3: ventaAModificar->pais = "Chile"; break;
-                case 4: ventaAModificar->pais = "Colombia"; break;
-                case 5: ventaAModificar->pais = "Ecuador"; break;
-                case 6: ventaAModificar->pais = "Peru"; break;
-                case 7: ventaAModificar->pais = "Uruguay"; break;
-                case 8: ventaAModificar->pais = "Venezuela"; break;
+                case 1: ventaAModificarEnVector->pais = "Argentina"; break;
+                case 2: ventaAModificarEnVector->pais = "Brasil"; break;
+                case 3: ventaAModificarEnVector->pais = "Chile"; break;
+                case 4: ventaAModificarEnVector->pais = "Colombia"; break;
+                case 5: ventaAModificarEnVector->pais = "Ecuador"; break;
+                case 6: ventaAModificarEnVector->pais = "Peru"; break;
+                case 7: ventaAModificarEnVector->pais = "Uruguay"; break;
+                case 8: ventaAModificarEnVector->pais = "Venezuela"; break;
             }
-            std::cout << "País modificado correctamente.\n";
+            cout << "País modificado correctamente por: "<<ventaAModificarEnVector->pais<<"\n";
             break;
         }
         case 2: { // Modificar Ciudad
-            std::cout << "Ingrese la nueva ciudad: ";
-            std::getline(std::cin, ventaAModificar->ciudad);
-            std::cout << "Ciudad modificada correctamente.\n";
+            cout << "Ingrese la nueva ciudad: ";
+            getline(cin, ventaAModificarEnVector->ciudad);
+            cout << "Ciudad reemplazada correctamente por: "<<ventaAModificarEnVector->ciudad<<"\n";
             break;
         }
         case 3: { // Modificar Cliente
-            std::cout << "Ingrese el nuevo nombre y apellido del cliente: ";
-            std::getline(std::cin, ventaAModificar->cliente);
-            std::cout << "Cliente modificado correctamente.\n";
+            cout << "Ingrese el nuevo nombre y apellido del cliente: ";
+            getline(cin, ventaAModificarEnVector->cliente);
+            cout << "Nombre del cliente reemplazado correctamente por: "<<ventaAModificarEnVector->cliente<<"\n";
             break;
         }
         case 4: { // Modificar Producto y Categoría
             int opcionProducto = 0;
-            std::string entradaProducto;
+            string entradaProducto;
             bool productoValido = false;
             do {
-                std::cout << "Seleccione el nuevo producto:\n";
-                std::cout << "1. Auriculares\n2. Celular\n3. Cámara\n4. Escritorio\n5. Impresora\n6. Laptop\n7. Monitor\n8. Silla ergonómica\n9. Tablet\n10. Teclado\n";
-                std::cout << "Opción: ";
-                std::cin >> entradaProducto;
+                cout << "Seleccione el nuevo producto:\n";
+                cout << "1. Auriculares\n2. Celular\n3. Cámara\n4. Escritorio\n5. Impresora\n6. Laptop\n7. Monitor\n8. Silla ergonómica\n9. Tablet\n10. Teclado\n";
+                cout << "Opción: ";
+                cin >> entradaProducto;
                 try {
-                    opcionProducto = std::stoi(entradaProducto);
+                    opcionProducto = stoi(entradaProducto);
                     if (opcionProducto >= 1 && opcionProducto <= 10) {
                         productoValido = true;
                     } else {
-                        std::cout << "Opción fuera de rango. Intente nuevamente.\n";
+                        cout << "Opción fuera de rango. Intente nuevamente.\n";
                     }
-                } catch (const std::exception& e) {
-                    std::cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
-                    std::cin.clear();
-                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                } catch (const exception& e) {
+                    cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 }
             } while (!productoValido);
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            // No es necesario cin.ignore() aquí porque la lectura fue de un string que se convirtió
+            // y la siguiente lectura será probablemente un cout. Si fuera un getline, sí.
 
             switch (opcionProducto) {
-                case 1: ventaAModificar->producto = "Auriculares"; ventaAModificar->categoria = "Accesorios"; break;
-                case 2: ventaAModificar->producto = "Celular"; ventaAModificar->categoria = "Electronica"; break;
-                case 3: ventaAModificar->producto = "Cámara"; ventaAModificar->categoria = "Electronica"; break;
-                case 4: ventaAModificar->producto = "Escritorio"; ventaAModificar->categoria = "Muebles"; break;
-                case 5: ventaAModificar->producto = "Impresora"; ventaAModificar->categoria = "Oficina"; break;
-                case 6: ventaAModificar->producto = "Laptop"; ventaAModificar->categoria = "Electronica"; break;
-                case 7: ventaAModificar->producto = "Monitor"; ventaAModificar->categoria = "Electronica"; break;
-                case 8: ventaAModificar->producto = "Silla ergonómica"; ventaAModificar->categoria = "Muebles"; break;
-                case 9: ventaAModificar->producto = "Tablet"; ventaAModificar->categoria = "Electronica"; break;
-                case 10: ventaAModificar->producto = "Teclado"; ventaAModificar->categoria = "Accesorios"; break;
+                case 1: ventaAModificarEnVector->producto = "Auriculares"; ventaAModificarEnVector->categoria = "Accesorios"; break;
+                case 2: ventaAModificarEnVector->producto = "Celular"; ventaAModificarEnVector->categoria = "Electronica"; break;
+                case 3: ventaAModificarEnVector->producto = "Cámara"; ventaAModificarEnVector->categoria = "Electronica"; break;
+                case 4: ventaAModificarEnVector->producto = "Escritorio"; ventaAModificarEnVector->categoria = "Muebles"; break;
+                case 5: ventaAModificarEnVector->producto = "Impresora"; ventaAModificarEnVector->categoria = "Oficina"; break;
+                case 6: ventaAModificarEnVector->producto = "Laptop"; ventaAModificarEnVector->categoria = "Electronica"; break;
+                case 7: ventaAModificarEnVector->producto = "Monitor"; ventaAModificarEnVector->categoria = "Electronica"; break;
+                case 8: ventaAModificarEnVector->producto = "Silla ergonómica"; ventaAModificarEnVector->categoria = "Muebles"; break;
+                case 9: ventaAModificarEnVector->producto = "Tablet"; ventaAModificarEnVector->categoria = "Electronica"; break;
+                case 10: ventaAModificarEnVector->producto = "Teclado"; ventaAModificarEnVector->categoria = "Accesorios"; break;
             }
-            std::cout << "Producto y categoría modificados correctamente.\n";
-            ventaAModificar->montoTotal = ventaAModificar->cantidad * ventaAModificar->precioUnitario;
-            std::cout << "Nuevo monto total: " << std::fixed << std::setprecision(2) << ventaAModificar->montoTotal << std::endl;
+            cout << "Producto y categoría modificados correctamente, su nuevo producot es:"<<ventaAModificarEnVector->producto<<"\n";
+            // Recalcular monto total si es necesario (aunque producto no afecta precio directamente aquí)
+            // ventaAModificarEnVector->montoTotal = ventaAModificarEnVector->cantidad * ventaAModificarEnVector->precioUnitario;
+            // cout << "Monto total recalculado: " << fixed << setprecision(2) << ventaAModificarEnVector->montoTotal << endl;
             break;
         }
         case 5: { // Modificar Cantidad
-            std::string nuevaCantidadStr;
+            string nuevaCantidadStr;
             bool cantidadValida = false;
+            int nuevaCantidadNum;
             do {
-                std::cout << "Ingrese la nueva cantidad: ";
-                std::cin >> nuevaCantidadStr;
+                cout << "Ingrese la nueva cantidad: ";
+                cin >> nuevaCantidadStr;
                 try {
-                    int nuevaCantidad = std::stoi(nuevaCantidadStr);
-                    if (nuevaCantidad > 0) {
-                        ventaAModificar->cantidad = nuevaCantidad;
+                    nuevaCantidadNum = stoi(nuevaCantidadStr);
+                    if (nuevaCantidadNum > 0) {
+                        ventaAModificarEnVector->cantidad = nuevaCantidadNum;
                         cantidadValida = true;
                     } else {
-                        std::cout << "La cantidad debe ser mayor que cero.\n";
+                        cout << "La cantidad debe ser mayor que cero.\n";
                     }
-                } catch (const std::exception& e) {
-                    std::cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
-                    std::cin.clear();
-                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                } catch (const exception& e) {
+                    cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 }
             } while (!cantidadValida);
-            ventaAModificar->montoTotal = ventaAModificar->cantidad * ventaAModificar->precioUnitario;
-            std::cout << "Cantidad modificada correctamente. Nuevo monto total: " << std::fixed << std::setprecision(2) << ventaAModificar->montoTotal << std::endl;
+            ventaAModificarEnVector->montoTotal = ventaAModificarEnVector->cantidad * ventaAModificarEnVector->precioUnitario;
+            cout << "Cantidad modificada correctamente. Nuevo monto total: " << fixed << setprecision(2) << ventaAModificarEnVector->montoTotal << endl;
             break;
         }
         case 6: { // Modificar Precio Unitario
-            std::string nuevoPrecioStr;
+            string nuevoPrecioStr;
             bool precioValido = false;
+            double nuevoPrecioNum;
             do {
-                std::cout << "Ingrese el nuevo precio unitario: ";
-                std::cin >> nuevoPrecioStr;
+                cout << "Ingrese el nuevo precio unitario: ";
+                cin >> nuevoPrecioStr;
                 try {
-                    double nuevoPrecio = std::stod(nuevoPrecioStr);
-                    if (nuevoPrecio > 0) {
-                        ventaAModificar->precioUnitario = nuevoPrecio;
+                    nuevoPrecioNum = stod(nuevoPrecioStr); // Usar stod para double
+                    if (nuevoPrecioNum > 0) {
+                        ventaAModificarEnVector->precioUnitario = nuevoPrecioNum;
                         precioValido = true;
                     } else {
-                        std::cout << "El precio debe ser mayor que cero.\n";
+                        cout << "El precio debe ser mayor que cero.\n";
                     }
-                } catch (const std::exception& e) {
-                    std::cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
-                    std::cin.clear();
-                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                } catch (const exception& e) {
+                    cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 }
             } while (!precioValido);
-            ventaAModificar->montoTotal = ventaAModificar->cantidad * ventaAModificar->precioUnitario;
-            std::cout << "Precio unitario modificado correctamente. Nuevo monto total: " << std::fixed << std::setprecision(2) << ventaAModificar->montoTotal << std::endl;
+            ventaAModificarEnVector->montoTotal = ventaAModificarEnVector->cantidad * ventaAModificarEnVector->precioUnitario;
+            cout << "Precio unitario modificado correctamente. Nuevo monto total: " << fixed << setprecision(2) << ventaAModificarEnVector->montoTotal << endl;
             break;
         }
         case 7: { // Modificar Medio de Envío
             int opcionMedio = 0;
-            std::string entradaMedio;
+            string entradaMedio;
             bool medioValido = false;
             do {
-                std::cout << "Seleccione el nuevo medio de envío:\n";
-                std::cout << "1. Terrestre\n2. Marítimo\n3. Aéreo\n";
-                std::cout << "Opción: ";
-                std::cin >> entradaMedio;
+                cout << "Seleccione el nuevo medio de envío:\n";
+                cout << "1. Terrestre\n2. Marítimo\n3. Aéreo\n";
+                cout << "Opción: ";
+                cin >> entradaMedio;
                 try {
-                    opcionMedio = std::stoi(entradaMedio);
+                    opcionMedio = stoi(entradaMedio);
                     if (opcionMedio >= 1 && opcionMedio <= 3) {
                         medioValido = true;
                     } else {
-                        std::cout << "Opción fuera de rango. Intente nuevamente.\n";
+                        cout << "Opción fuera de rango. Intente nuevamente.\n";
                     }
-                } catch (const std::exception& e) {
-                    std::cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
-                    std::cin.clear();
-                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                } catch (const exception& e) {
+                    cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 }
             } while (!medioValido);
             switch (opcionMedio) {
-                case 1: ventaAModificar->medioEnvio = "Terrestre"; break;
-                case 2: ventaAModificar->medioEnvio = "Marítimo"; break;
-                case 3: ventaAModificar->medioEnvio = "Aéreo"; break;
+                case 1: ventaAModificarEnVector->medioEnvio = "Terrestre"; break;
+                case 2: ventaAModificarEnVector->medioEnvio = "Marítimo"; break;
+                case 3: ventaAModificarEnVector->medioEnvio = "Aéreo"; break;
             }
-            std::cout << "Medio de envío modificado correctamente.\n";
+            cout << "Medio de envío modificado correctamente, el nuevo medio de envio es:"<<ventaAModificarEnVector->medioEnvio<<"\n";
             break;
         }
         case 8: { // Modificar Estado de Envío
             int opcionEstado = 0;
-            std::string entradaEstado;
+            string entradaEstado;
             bool estadoValido = false;
             do {
-                std::cout << "Seleccione el nuevo estado de envío:\n";
-                std::cout << "1. Pendiente\n2. En Proceso\n3. Entregado\n4. Cancelado\n";
-                std::cout << "Opción: ";
-                std::cin >> entradaEstado;
+                cout << "Seleccione el nuevo estado de envío:\n";
+                cout << "1. Pendiente\n2. En Proceso\n3. Entregado\n4. Cancelado\n";
+                cout << "Opción: ";
+                cin >> entradaEstado;
                 try {
-                    opcionEstado = std::stoi(entradaEstado);
+                    opcionEstado = stoi(entradaEstado);
                     if (opcionEstado >= 1 && opcionEstado <= 4) {
                         estadoValido = true;
                     } else {
-                        std::cout << "Opción fuera de rango. Intente nuevamente.\n";
+                        cout << "Opción fuera de rango. Intente nuevamente.\n";
                     }
-                } catch (const std::exception& e) {
-                    std::cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
-                    std::cin.clear();
-                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                } catch (const exception& e) {
+                    cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 }
             } while (!estadoValido);
             switch (opcionEstado) {
-                case 1: ventaAModificar->estadoEnvio = "Pendiente"; break;
-                case 2: ventaAModificar->estadoEnvio = "En Proceso"; break;
-                case 3: ventaAModificar->estadoEnvio = "Entregado"; break;
-                case 4: ventaAModificar->estadoEnvio = "Cancelado"; break;
+                case 1: ventaAModificarEnVector->estadoEnvio = "Pendiente"; break;
+                case 2: ventaAModificarEnVector->estadoEnvio = "En Proceso"; break;
+                case 3: ventaAModificarEnVector->estadoEnvio = "Entregado"; break;
+                case 4: ventaAModificarEnVector->estadoEnvio = "Cancelado"; break;
             }
-            std::cout << "Estado de envío modificado correctamente.\n";
+            cout << "Estado de envío modificado correctamente, estado actual"<<ventaAModificarEnVector->estadoEnvio<<"\n";
             break;
         }
         default:
-            std::cout << "Opción de campo inválida.\n";
+            cout << "Opción de campo inválida.\n"; // No debería llegar aquí por la validación previa
             break;
     }
 
     // 6. REESCRITURA COMPLETA DEL ARCHIVO CSV.
+    // El vector bdVector ya tiene la venta modificada.
     // Abre el archivo en modo de truncado (BORRA el contenido existente).
-    std::ofstream archivo(BASE_DE_DATOS, ios::out | ios::trunc);
+    ofstream archivo(BASE_DE_DATOS, ios::out | ios::trunc);
     if (!archivo.is_open()) {
-        std::cout << "ERROR CRÍTICO: No se pudo abrir el archivo para escritura y actualización. Los cambios NO se guardaron permanentemente.\n";
+        cout << "ERROR CRÍTICO: No se pudo abrir el archivo '" << BASE_DE_DATOS << "' para escritura y actualización. Los cambios NO se guardaron permanentemente.\n";
         return;
     }
 
     archivo << csvHeader << endl; // Escribe el encabezado ANTES de los datos.
 
-    for (const auto& v : bdVector) {
+    for (const auto& v : bdVector) { // Itera sobre el bdVector actualizado
         archivo << v.idVenta << ",";
         archivo << v.fecha << ",";
         archivo << v.pais << ",";
         archivo << v.ciudad << ",";
-        archivo << v.cliente << ",";
+        archivo << "\"" << v.cliente << "\","; // Considerar comillas si cliente puede tener comas
         archivo << v.producto << ",";
         archivo << v.categoria << ",";
         archivo << v.cantidad << ",";
-        archivo << std::fixed << std::setprecision(2) << v.precioUnitario << ",";
-        archivo << std::fixed << std::setprecision(2) << v.montoTotal << ",";
+        archivo << fixed << setprecision(2) << v.precioUnitario << ",";
+        archivo << fixed << setprecision(2) << v.montoTotal << ",";
         archivo << v.medioEnvio << ",";
-        archivo << v.estadoEnvio << std::endl;
+        archivo << v.estadoEnvio << endl; // Usar endl para asegurar flush y nueva línea
     }
     archivo.close();
-    std::cout << "Venta modificada y archivo CSV actualizado correctamente.\n";
+    cout << "Venta modificada y archivo CSV actualizado correctamente.\n";
 }
 
 void eliminarVenta(vector<Venta>& ventas) {
@@ -738,19 +787,256 @@ void eliminarVenta(vector<Venta>& ventas) {
 
 // ======= FUNCIONES DE CONSULTAS (asumidas existentes) =======
 // Estas funciones no las modifico, solo las dejo como declaración si no están en tu original
-// o si están, mantendrán su implementación.
-void calcularTopCiudades(const vector<Venta>& ventas) { /* ... tu implementación ... */ cout << "Implementacion de Top Ciudades." << endl; }
-void montoTotalPorProductoPorPais(const vector<Venta>& ventas) { /* ... tu implementación ... */ cout << "Implementacion de Monto Total por Producto por Pais." << endl; }
-void promedioVentasPorCategoriaPorPais(const vector<Venta>& ventas) { /* ... tu implementación ... */ cout << "Implementacion de Promedio de ventas por categoria por pais." << endl; }
-void medioEnvioMasUtilizadoPorPais(const vector<Venta>& ventas) { /* ... tu implementación ... */ cout << "Implementacion de Medio de envio mas utilizado por pais." << endl; }
-void medioEnvioMasUtilizadoPorCategoria(const vector<Venta>& ventas) { /* ... tu implementación ... */ cout << "Implementacion de Medio de envio mas utilizado por categoria." << endl; }
-void diaConMasVentas(const vector<Venta>& ventas) { /* ... tu implementación ... */ cout << "Implementacion de Dia con mayor cantidad de ventas." << endl; }
-void estadoEnvioMasFrecuentePorPais(const vector<Venta>& ventas) { /* ... tu implementación ... */ cout << "Implementacion de Estado de envio mas frecuente por pais." << endl; }
-void productoMasVendido(const vector<Venta>& ventas) { /* ... tu implementación ... */ cout << "Implementacion de Producto mas vendido en cantidad total." << endl; }
-void productoMenosVendido(const vector<Venta>& ventas) { /* ... tu implementación ... */ cout << "Implementacion de Producto menos vendido en cantidad total." << endl; }
+// ======= FUNCIONES DE PROCESAMIENTO =======
+void calcularTopCiudades(const vector<Venta>& ventas) {
+    unordered_map<string, unordered_map<string, double>> ventasAcumuladas;
+    for (size_t i = 0; i < ventas.size(); ++i) {
+        ventasAcumuladas[ventas[i].pais][ventas[i].ciudad] += ventas[i].montoTotal;
+    }
 
-void consultasDinamicas(const vector<Venta>& ventas) {
-    cout << "Función de consultas dinámicas en desarrollo..." << endl;
+    for (unordered_map<string, unordered_map<string, double>>::const_iterator it = ventasAcumuladas.begin(); it != ventasAcumuladas.end(); ++it) {
+        const string& pais = it->first;
+        const unordered_map<string, double>& ciudades = it->second;
+        vector<pair<string, double>> ciudadesOrdenadas;
+        for (unordered_map<string, double>::const_iterator it2 = ciudades.begin(); it2 != ciudades.end(); ++it2) {
+            ciudadesOrdenadas.push_back(make_pair(it2->first, it2->second));
+        }
+        sort(ciudadesOrdenadas.begin(), ciudadesOrdenadas.end(), [](const pair<string, double>& a, const pair<string, double>& b) {
+            return a.second > b.second;
+        });
+        cout << "----------------------------\n";
+        cout << "Top 5 ciudades con mayor monto de ventas en " << pais << " (" << ciudadesOrdenadas.size() << " ciudades)\n";
+        cout << "----------------------------\n";
+
+        int limite = min(5, (int)ciudadesOrdenadas.size());
+        cout << fixed << setprecision(2);
+        for (int i = 0; i < limite; i++) {
+            cout << i+1 << ". " << ciudadesOrdenadas[i].first << " - $" << ciudadesOrdenadas[i].second << endl;
+        }
+        cout << endl;
+    }
+}
+
+void montoTotalPorProductoPorPais(const vector<Venta>& ventas) {
+    unordered_map<string, unordered_map<string, double>> montoPorProductoPorPais;
+
+    // Acumular ventas por país y producto
+    for (size_t i = 0; i < ventas.size(); ++i) {
+        montoPorProductoPorPais[ventas[i].pais][ventas[i].producto] += ventas[i].montoTotal;
+    }
+
+    cout << fixed << setprecision(2);
+    for (unordered_map<string, unordered_map<string, double>>::const_iterator it = montoPorProductoPorPais.begin();
+         it != montoPorProductoPorPais.end(); ++it) {
+
+        const string& pais = it->first;
+        const unordered_map<string, double>& productos = it->second;
+
+        cout << "===============================\n";
+        cout << "PAÍS: " << pais << endl;
+
+        for (unordered_map<string, double>::const_iterator it2 = productos.begin(); it2 != productos.end(); ++it2) {
+            cout << "- " << it2->first << ": $" << it2->second << endl;
+        }
+        cout << endl;
+         }
+}
+
+void promedioVentasPorCategoriaPorPais(const vector<Venta>& ventas) {
+    unordered_map<string, unordered_map<string, pair<double, int>>> datosPorCategoriaPorPais;
+
+    // Acumular ventas y contar por país y categoría
+    for (size_t i = 0; i < ventas.size(); ++i) {
+        datosPorCategoriaPorPais[ventas[i].pais][ventas[i].categoria].first += ventas[i].montoTotal;
+        datosPorCategoriaPorPais[ventas[i].pais][ventas[i].categoria].second++;
+    }
+
+    cout << fixed << setprecision(2);
+    for (unordered_map<string, unordered_map<string, pair<double, int>>>::const_iterator it = datosPorCategoriaPorPais.begin();
+         it != datosPorCategoriaPorPais.end(); ++it) {
+
+        const string& pais = it->first;
+        const unordered_map<string, pair<double, int>>& categorias = it->second;
+
+        cout << "===============================\n";
+        cout << "PAÍS: " << pais << endl;
+
+        for (unordered_map<string, pair<double, int>>::const_iterator it2 = categorias.begin();
+             it2 != categorias.end(); ++it2) {
+
+            const string& categoria = it2->first;
+            double suma = it2->second.first;
+            int cantidad = it2->second.second;
+            double promedio = cantidad > 0 ? suma / cantidad : 0;
+
+            cout << "- Categoria: " << categoria << " - Promedio: $" << promedio << endl;
+             }
+
+        cout << endl;
+         }
+}
+
+void medioEnvioMasUtilizadoPorPais(const vector<Venta>& ventas) {
+    unordered_map<string, unordered_map<string, int>> conteoEnviosPorPais;
+
+    // Contar medios de envío por país
+    for (size_t i = 0; i < ventas.size(); ++i) {
+        conteoEnviosPorPais[ventas[i].pais][ventas[i].medioEnvio]++;
+    }
+
+    for (unordered_map<string, unordered_map<string, int>>::const_iterator it = conteoEnviosPorPais.begin();
+         it != conteoEnviosPorPais.end(); ++it) {
+
+        const string& pais = it->first;
+        const unordered_map<string, int>& envios = it->second;
+
+        string medioMasUsado;
+        int maxCantidad = 0;
+
+        for (unordered_map<string, int>::const_iterator it2 = envios.begin(); it2 != envios.end(); ++it2) {
+            if (it2->second > maxCantidad) {
+                maxCantidad = it2->second;
+                medioMasUsado = it2->first;
+            }
+        }
+
+        cout << "PAÍS: " << pais << " Medio más usado: " << medioMasUsado << " (" << maxCantidad << " veces)" << endl;
+         }
+}
+
+void medioEnvioMasUtilizadoPorCategoria(const vector<Venta>& ventas) {
+    unordered_map<string, unordered_map<string, int>> conteoEnviosPorCategoria;
+
+    // Contar medios de envío por categoría
+    for (size_t i = 0; i < ventas.size(); ++i) {
+        conteoEnviosPorCategoria[ventas[i].categoria][ventas[i].medioEnvio]++;
+    }
+
+    for (unordered_map<string, unordered_map<string, int>>::const_iterator it = conteoEnviosPorCategoria.begin();
+         it != conteoEnviosPorCategoria.end(); ++it) {
+
+        const string& categoria = it->first;
+        const unordered_map<string, int>& envios = it->second;
+
+        string medioMasUsado;
+        int maxCantidad = 0;
+
+        for (unordered_map<string, int>::const_iterator it2 = envios.begin(); it2 != envios.end(); ++it2) {
+            if (it2->second > maxCantidad) {
+                maxCantidad = it2->second;
+                medioMasUsado = it2->first;
+            }
+        }
+
+        cout << "CATEGORÍA: " << categoria << " Medio más usado: " << medioMasUsado << " (" << maxCantidad << " veces)" << endl;
+         }
+}
+
+void diaConMasVentas(const vector<Venta>& ventas) {
+    unordered_map<string, int> conteoPorFecha;
+
+    // Contar ventas por fecha
+    for (size_t i = 0; i < ventas.size(); ++i) {
+        conteoPorFecha[ventas[i].fecha]++;
+    }
+
+    string fechaMax;
+    int maxVentas = 0;
+
+    for (unordered_map<string, int>::const_iterator it = conteoPorFecha.begin();
+         it != conteoPorFecha.end(); ++it) {
+        if (it->second > maxVentas) {
+            maxVentas = it->second;
+            fechaMax = it->first;
+        }
+         }
+
+    if (!fechaMax.empty()) {
+        cout << "Día con más ventas: " << fechaMax << " (" << maxVentas << " ventas)" << endl;
+    } else {
+        cout << "No hay ventas registradas." << endl;
+    }
+}
+
+void estadoEnvioMasFrecuentePorPais(const vector<Venta>& ventas) {
+    unordered_map<string, unordered_map<string, int>> estadosPorPais;
+
+    // Contar estados de envío por país
+    for (size_t i = 0; i < ventas.size(); ++i) {
+        estadosPorPais[ventas[i].pais][ventas[i].estadoEnvio]++;
+    }
+
+    cout << "Estado de envío más frecuente por país:\n";
+
+    for (unordered_map<string, unordered_map<string, int>>::const_iterator it = estadosPorPais.begin();
+         it != estadosPorPais.end(); ++it) {
+
+        const string& pais = it->first;
+        const unordered_map<string, int>& estados = it->second;
+
+        string estadoMasFrecuente;
+        int maxCantidad = 0;
+
+        for (unordered_map<string, int>::const_iterator it2 = estados.begin(); it2 != estados.end(); ++it2) {
+            if (it2->second > maxCantidad) {
+                maxCantidad = it2->second;
+                estadoMasFrecuente = it2->first;
+            }
+        }
+
+        cout << "- " << pais << ": " << estadoMasFrecuente << " (" << maxCantidad << " veces)" << endl;
+         }
+}
+
+void productoMasVendido(const vector<Venta>& ventas) {
+    unordered_map<string, int> cantidadPorProducto;
+
+    // Acumular cantidades por producto
+    for (size_t i = 0; i < ventas.size(); ++i) {
+        cantidadPorProducto[ventas[i].producto] += ventas[i].cantidad;
+    }
+
+    string productoTop;
+    int maxCantidad = 0;
+
+    for (unordered_map<string, int>::const_iterator it = cantidadPorProducto.begin();
+         it != cantidadPorProducto.end(); ++it) {
+        if (it->second > maxCantidad) {
+            maxCantidad = it->second;
+            productoTop = it->first;
+        }
+    }
+
+    cout << "Producto más vendido en cantidad total:\n";
+    cout << "- " << productoTop << " (" << maxCantidad << " unidades vendidas)" << endl;
+}
+
+void productoMenosVendido(const vector<Venta>& ventas) {
+    unordered_map<string, int> cantidadPorProducto;
+
+    // Acumular cantidades por producto
+    for (size_t i = 0; i < ventas.size(); ++i) {
+        cantidadPorProducto[ventas[i].producto] += ventas[i].cantidad;
+    }
+
+    if (cantidadPorProducto.empty()) {
+        cout << "No hay productos registrados." << endl;
+        return;
+    }
+
+    string productoMin;
+    int minCantidad = numeric_limits<int>::max();
+
+    for (unordered_map<string, int>::const_iterator it = cantidadPorProducto.begin();
+         it != cantidadPorProducto.end(); ++it) {
+        if (it->second < minCantidad) {
+            minCantidad = it->second;
+            productoMin = it->first;
+        }
+         }
+
+    cout << "Producto menos vendido en cantidad total:\n";
+    cout << "- " << productoMin << " (" << minCantidad << " unidades vendidas)" << endl;
 }
 
 void menuResumenVentas(const vector<Venta>& ventas) {
@@ -856,6 +1142,56 @@ void menuResumenVentas(const vector<Venta>& ventas) {
     } while (opcionResumen != 10);
 }
 
+
+void mostrarMenu() {
+    cout << "\n========== MENU DE CONSULTAS DINAMICAS ==========" << endl;
+    cout << "1. Listar ventas por ciudad" << endl;
+    cout << "2. Listar ventas por rango de fechas y pais" << endl;
+    cout << "3. Comparar metricas de dos paises" << endl;
+    cout << "4. Comparar dos productos en todos los paises" << endl;
+    cout << "5. Buscar productos por monto promedio (umbral)" << endl;
+    cout << "0. Salir" << endl;
+    cout << "=================================================" << endl;
+    cout << "Seleccione una opcion: ";
+}
+
+void menuConsultas() {
+    // Estructuras de datos principales
+    vector<Venta> todasLasVentas;
+    MapaPaises datosAgregados;
+
+    // Carga inicial de datos
+    cargarVentas(todasLasVentas);
+    procesarDatosAgregados(todasLasVentas, datosAgregados);
+
+    int opcion;
+    do {
+        mostrarMenu();
+        cin >> opcion;
+
+        // Limpiar el buffer de entrada para que getline funcione bien después de cin >>
+        if (cin.peek() == '\n') {
+            cin.ignore();
+        }
+
+        switch (opcion) {
+            case 1: consultaPorCiudad(todasLasVentas); break;
+            case 2: consultaPorFechaYPais(todasLasVentas); break;
+            case 3: compararDosPaises(datosAgregados); break;
+            case 4: compararDosProductos(datosAgregados); break;
+            case 5: buscarPorPromedio(datosAgregados); break;
+            case 0: cout << "Saliendo del modulo de consultas." << endl; break;
+            default:
+                cout << "Opcion no valida. Intente de nuevo." << endl;
+            if (cin.fail()) {
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            }
+            break;
+        }
+    } while (opcion != 0);
+}
+
 // ======= FUNCIÓN MAIN CORREGIDA =======
 int main() {
     vector<Venta> ventas;
@@ -922,7 +1258,7 @@ int main() {
                 }
                 break;
             case 5:
-                consultasDinamicas(ventas);
+                menuConsultas();
                 break;
             case 6:
                 if (ventas.empty()) {
@@ -941,4 +1277,5 @@ int main() {
     } while (opcion != 7);
 
     return 0;
+
 }
