@@ -41,16 +41,13 @@ int fechaAEntero(const string& fecha) {
  * la estructura agregada (el mapa) porque esa estructura pierde los detalles de la ciudad.
  * La estrategia es una simple iteración lineal.
  */
-void consultaPorCiudad(const vector<Venta>& ventas) {
-    string ciudad;
-    cout << "-> Ingrese el nombre de la ciudad: ";
-    getline(cin, ciudad); // Usamos getline para leer nombres con espacios.
-
+void consultaPorCiudad(const vector<Venta>& ventas, string ciudad, int &ifCount) {
     cout << "\n--- Ventas en " << ciudad << " ---" << endl;
     bool encontradas = false; // Flag para dar un mensaje amigable si no hay resultados.
 
     // Se recorre cada venta en el vector.
     for (const auto& v : ventas) {
+        ifCount++;
         // Si la ciudad de la venta coincide con la buscada, se imprime.
         if (v.ciudad == ciudad) {
             cout << "  ID: " << v.idVenta << ", Fecha: " << v.fecha << ", Producto: " << v.producto
@@ -71,15 +68,7 @@ void consultaPorCiudad(const vector<Venta>& ventas) {
  * por lo que opera sobre el vector. La clave aquí es el uso de la función auxiliar
  * `fechaAEntero` para hacer la comparación del rango de fechas de forma eficiente.
  */
-void consultaPorFechaYPais(const vector<Venta>& ventas) {
-    string pais, fechaInicio, fechaFin;
-    cout << "-> Ingrese el pais: ";
-    getline(cin, pais);
-    cout << "-> Ingrese la fecha de inicio (DD/MM/YYYY): ";
-    getline(cin, fechaInicio);
-    cout << "-> Ingrese la fecha de fin (DD/MM/YYYY): ";
-    getline(cin, fechaFin);
-
+void consultaPorFechaYPais(const vector<Venta>& ventas, string pais, string fechaInicio, string fechaFin, int &ifCount) {
     // Convertimos las fechas de entrada a enteros para poder compararlas numéricamente.
     int f_inicio = fechaAEntero(fechaInicio);
     int f_fin = fechaAEntero(fechaFin);
@@ -87,6 +76,7 @@ void consultaPorFechaYPais(const vector<Venta>& ventas) {
     cout << "\n--- Ventas en " << pais << " entre " << fechaInicio << " y " << fechaFin << " ---" << endl;
     bool encontradas = false;
     for (const auto& v : ventas) {
+        ifCount++;
         // Primero filtramos por país, que es una comparación de strings simple.
         if (v.pais == pais) {
             // Luego, solo para las ventas del país correcto, hacemos la conversión de fecha y comparamos.
@@ -117,13 +107,7 @@ void consultaPorFechaYPais(const vector<Venta>& ventas) {
  * productos vendidos en cada país. Se usa `.at()` para acceder a los datos, que
  * es seguro porque está dentro de un bloque try-catch que maneja el caso de que un país no exista.
  */
-void compararDosPaises(const MapaPaises& datos) {
-    string p1, p2;
-    cout << "-> Ingrese el primer pais: ";
-    getline(cin, p1);
-    cout << "-> Ingrese el segundo pais: ";
-    getline(cin, p2);
-
+void compararDosPaises(const MapaPaises& datos, string p1, string p2, int &ifCount) {
     try {
         // Accedemos a los datos de cada país. Si no existe, .at() lanza una excepción.
         const MapaProductos& map1 = datos.at(p1);
@@ -143,6 +127,7 @@ void compararDosPaises(const MapaPaises& datos) {
         // --- b. Producto más vendido (por cantidad de unidades) ---
         string prodMasVendido1; int maxVentas1 = -1;
         for (const auto& par : map1) {
+            ifCount++;
             if (par.second.cantidadTotalVendida > maxVentas1) {
                 maxVentas1 = par.second.cantidadTotalVendida;
                 prodMasVendido1 = par.first;
@@ -150,6 +135,7 @@ void compararDosPaises(const MapaPaises& datos) {
         }
         string prodMasVendido2; int maxVentas2 = -1;
         for (const auto& par : map2) {
+            ifCount++;
             if (par.second.cantidadTotalVendida > maxVentas2) {
                 maxVentas2 = par.second.cantidadTotalVendida;
                 prodMasVendido2 = par.first;
@@ -191,13 +177,7 @@ void compararDosPaises(const MapaPaises& datos) {
  * Usamos `.count()` para verificar si un producto existe en un país antes de acceder a él,
  * lo que evita errores y nos permite mostrar '0' si no se vendió.
  */
-void compararDosProductos(const MapaPaises& datos) {
-    string prod1_str, prod2_str;
-    cout << "-> Ingrese el primer producto: ";
-    getline(cin, prod1_str);
-    cout << "-> Ingrese el segundo producto: ";
-    getline(cin, prod2_str);
-
+void compararDosProductos(const MapaPaises& datos, string prod1_str, string prod2_str, int &ifCount) {
     cout << "\n--- Comparativa de '" << prod1_str << "' vs '" << prod2_str << "' ---" << endl;
     // Usamos printf para un formato de tabla alineado y limpio.
     printf("%-15s | %-25s | %-25s\n", "Pais", (prod1_str + " (Cant/Monto)").c_str(), (prod2_str + " (Cant/Monto)").c_str());
@@ -205,6 +185,7 @@ void compararDosProductos(const MapaPaises& datos) {
 
     // Iteramos sobre todos los países en nuestra estructura de datos.
     for (const auto& parPais : datos) {
+        ifCount++;
         const string& pais = parPais.first;
         const MapaProductos& mapaProd = parPais.second;
 
@@ -238,23 +219,13 @@ void compararDosProductos(const MapaPaises& datos) {
  * tan útil. El cálculo del promedio (`monto / cantidad`) se puede hacer al momento de la
  * consulta de forma muy rápida, ya que tenemos los totales listos.
  */
-void buscarPorPromedio(const MapaPaises& datos) {
-    string pais, modo;
-    double umbral;
-    cout << "-> Ingrese el pais: ";
-    getline(cin, pais);
-    cout << "-> Ingrese el monto umbral (ej: 500): ";
-    cin >> umbral;
-    cout << "-> Buscar productos con promedio (mayor/menor) al umbral?: ";
-    cin >> modo;
-    // Limpiamos el buffer de entrada después de leer un número o palabra.
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-
+void buscarPorPromedio(const MapaPaises& datos, string pais, string modo, double umbral, int &ifCount) {
     try {
         const MapaProductos& mapaProd = datos.at(pais);
         cout << "\n--- Resultados para " << pais << " ---" << endl;
 
         for (const auto& par : mapaProd) {
+            ifCount++;
             const string& producto = par.first;
             const auto& stats = par.second;
             // Importante: verificar que la cantidad no sea cero para evitar división por cero.

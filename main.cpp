@@ -14,13 +14,10 @@
 #include "Consultas.h"
 
 // Asegúrate de que esta ruta sea correcta para tu entorno.
-#define BASE_DE_DATOS "ventas_sudamerica.csv"
+#define BASE_DE_DATOS "C:/Users/matia/Downloads/proyecto-2025-comision-tosetti-2404761-2415049-2416872-yedero-master/ventas_sudamerica.csv"
 
 using namespace std;
 using namespace chrono;
-
-
-
 
 
 // Variable global para almacenar el encabezado del CSV.
@@ -788,10 +785,11 @@ void eliminarVenta(vector<Venta>& ventas) {
 // ======= FUNCIONES DE CONSULTAS (asumidas existentes) =======
 // Estas funciones no las modifico, solo las dejo como declaración si no están en tu original
 // ======= FUNCIONES DE PROCESAMIENTO =======
-void calcularTopCiudades(const vector<Venta>& ventas) {
+void calcularTopCiudades(const vector<Venta>& ventas, int &ifCount) {
     unordered_map<string, unordered_map<string, double>> ventasAcumuladas;
     for (size_t i = 0; i < ventas.size(); ++i) {
         ventasAcumuladas[ventas[i].pais][ventas[i].ciudad] += ventas[i].montoTotal;
+        ifCount++;
     }
 
     for (unordered_map<string, unordered_map<string, double>>::const_iterator it = ventasAcumuladas.begin(); it != ventasAcumuladas.end(); ++it) {
@@ -804,6 +802,7 @@ void calcularTopCiudades(const vector<Venta>& ventas) {
         sort(ciudadesOrdenadas.begin(), ciudadesOrdenadas.end(), [](const pair<string, double>& a, const pair<string, double>& b) {
             return a.second > b.second;
         });
+
         cout << "----------------------------\n";
         cout << "Top 5 ciudades con mayor monto de ventas en " << pais << " (" << ciudadesOrdenadas.size() << " ciudades)\n";
         cout << "----------------------------\n";
@@ -817,17 +816,18 @@ void calcularTopCiudades(const vector<Venta>& ventas) {
     }
 }
 
-void montoTotalPorProductoPorPais(const vector<Venta>& ventas) {
+void montoTotalPorProductoPorPais(const vector<Venta>& ventas, int &ifCount) {
     unordered_map<string, unordered_map<string, double>> montoPorProductoPorPais;
 
     // Acumular ventas por país y producto
     for (size_t i = 0; i < ventas.size(); ++i) {
         montoPorProductoPorPais[ventas[i].pais][ventas[i].producto] += ventas[i].montoTotal;
+        ifCount++;
     }
 
     cout << fixed << setprecision(2);
     for (unordered_map<string, unordered_map<string, double>>::const_iterator it = montoPorProductoPorPais.begin();
-         it != montoPorProductoPorPais.end(); ++it) {
+        it != montoPorProductoPorPais.end(); ++it) {
 
         const string& pais = it->first;
         const unordered_map<string, double>& productos = it->second;
@@ -839,16 +839,17 @@ void montoTotalPorProductoPorPais(const vector<Venta>& ventas) {
             cout << "- " << it2->first << ": $" << it2->second << endl;
         }
         cout << endl;
-         }
+    }
 }
 
-void promedioVentasPorCategoriaPorPais(const vector<Venta>& ventas) {
+void promedioVentasPorCategoriaPorPais(const vector<Venta>& ventas, int &ifCount) {
     unordered_map<string, unordered_map<string, pair<double, int>>> datosPorCategoriaPorPais;
 
     // Acumular ventas y contar por país y categoría
     for (size_t i = 0; i < ventas.size(); ++i) {
         datosPorCategoriaPorPais[ventas[i].pais][ventas[i].categoria].first += ventas[i].montoTotal;
         datosPorCategoriaPorPais[ventas[i].pais][ventas[i].categoria].second++;
+        ifCount++;
     }
 
     cout << fixed << setprecision(2);
@@ -861,7 +862,7 @@ void promedioVentasPorCategoriaPorPais(const vector<Venta>& ventas) {
         cout << "===============================\n";
         cout << "PAÍS: " << pais << endl;
 
-        for (unordered_map<string, pair<double, int>>::const_iterator it2 = categorias.begin();
+        for (auto it2 = categorias.begin();
              it2 != categorias.end(); ++it2) {
 
             const string& categoria = it2->first;
@@ -876,12 +877,13 @@ void promedioVentasPorCategoriaPorPais(const vector<Venta>& ventas) {
          }
 }
 
-void medioEnvioMasUtilizadoPorPais(const vector<Venta>& ventas) {
+void medioEnvioMasUtilizadoPorPais(const vector<Venta>& ventas, int &ifCount) {
     unordered_map<string, unordered_map<string, int>> conteoEnviosPorPais;
 
     // Contar medios de envío por país
     for (size_t i = 0; i < ventas.size(); ++i) {
         conteoEnviosPorPais[ventas[i].pais][ventas[i].medioEnvio]++;
+        ifCount++;
     }
 
     for (unordered_map<string, unordered_map<string, int>>::const_iterator it = conteoEnviosPorPais.begin();
@@ -904,12 +906,13 @@ void medioEnvioMasUtilizadoPorPais(const vector<Venta>& ventas) {
          }
 }
 
-void medioEnvioMasUtilizadoPorCategoria(const vector<Venta>& ventas) {
+void medioEnvioMasUtilizadoPorCategoria(const vector<Venta>& ventas, int &ifCount) {
     unordered_map<string, unordered_map<string, int>> conteoEnviosPorCategoria;
 
     // Contar medios de envío por categoría
     for (size_t i = 0; i < ventas.size(); ++i) {
         conteoEnviosPorCategoria[ventas[i].categoria][ventas[i].medioEnvio]++;
+        ifCount++;
     }
 
     for (unordered_map<string, unordered_map<string, int>>::const_iterator it = conteoEnviosPorCategoria.begin();
@@ -932,12 +935,13 @@ void medioEnvioMasUtilizadoPorCategoria(const vector<Venta>& ventas) {
          }
 }
 
-void diaConMasVentas(const vector<Venta>& ventas) {
+void diaConMasVentas(const vector<Venta>& ventas, int &ifCount) {
     unordered_map<string, int> conteoPorFecha;
 
     // Contar ventas por fecha
     for (size_t i = 0; i < ventas.size(); ++i) {
         conteoPorFecha[ventas[i].fecha]++;
+        ifCount++;
     }
 
     string fechaMax;
@@ -958,12 +962,13 @@ void diaConMasVentas(const vector<Venta>& ventas) {
     }
 }
 
-void estadoEnvioMasFrecuentePorPais(const vector<Venta>& ventas) {
+void estadoEnvioMasFrecuentePorPais(const vector<Venta>& ventas, int &ifCount) {
     unordered_map<string, unordered_map<string, int>> estadosPorPais;
 
     // Contar estados de envío por país
     for (size_t i = 0; i < ventas.size(); ++i) {
         estadosPorPais[ventas[i].pais][ventas[i].estadoEnvio]++;
+        ifCount++;
     }
 
     cout << "Estado de envío más frecuente por país:\n";
@@ -988,12 +993,13 @@ void estadoEnvioMasFrecuentePorPais(const vector<Venta>& ventas) {
          }
 }
 
-void productoMasVendido(const vector<Venta>& ventas) {
+void productoMasVendido(const vector<Venta>& ventas, int &ifCount) {
     unordered_map<string, int> cantidadPorProducto;
 
     // Acumular cantidades por producto
     for (size_t i = 0; i < ventas.size(); ++i) {
         cantidadPorProducto[ventas[i].producto] += ventas[i].cantidad;
+        ifCount++;
     }
 
     string productoTop;
@@ -1011,12 +1017,13 @@ void productoMasVendido(const vector<Venta>& ventas) {
     cout << "- " << productoTop << " (" << maxCantidad << " unidades vendidas)" << endl;
 }
 
-void productoMenosVendido(const vector<Venta>& ventas) {
+void productoMenosVendido(const vector<Venta>& ventas, int &ifCount) {
     unordered_map<string, int> cantidadPorProducto;
 
     // Acumular cantidades por producto
     for (size_t i = 0; i < ventas.size(); ++i) {
         cantidadPorProducto[ventas[i].producto] += ventas[i].cantidad;
+        ifCount++;
     }
 
     if (cantidadPorProducto.empty()) {
@@ -1042,7 +1049,7 @@ void productoMenosVendido(const vector<Venta>& ventas) {
 void menuResumenVentas(const vector<Venta>& ventas) {
     int opcionResumen;
     do {
-        cout << "\n--- Resumen de Ventas ---\n";
+        cout << "--- Resumen de Ventas ---\n";
         cout << "1. Top 5 ciudades con mayor monto por pais\n";
         cout << "2. Monto total vendido por producto por pais\n";
         cout << "3. Promedio de ventas por categoria por pais\n";
@@ -1061,75 +1068,93 @@ void menuResumenVentas(const vector<Venta>& ventas) {
 
         switch (opcionResumen) {
             case 1: {
+                int ifCount = 0;
                 auto inicio = steady_clock::now();
-                calcularTopCiudades(ventas);
+                calcularTopCiudades(ventas, ifCount);
                 auto fin = steady_clock::now();
                 auto duracion = duration_cast<milliseconds>(fin - inicio).count();
                 cout << "Tiempo de ejecucion: " << duracion << " ms\n";
+                cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
                 break;
             }
             case 2: {
+                int ifCount = 0;
                 auto inicio = steady_clock::now();
-                montoTotalPorProductoPorPais(ventas);
+                montoTotalPorProductoPorPais(ventas, ifCount);
                 auto fin = steady_clock::now();
                 auto duracion = duration_cast<milliseconds>(fin - inicio).count();
                 cout << "Tiempo de ejecucion: " << duracion << " ms\n";
+                cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
                 break;
             }
             case 3: {
+                int ifCount = 0;
                 auto inicio = steady_clock::now();
-                promedioVentasPorCategoriaPorPais(ventas);
+                promedioVentasPorCategoriaPorPais(ventas, ifCount);
                 auto fin = steady_clock::now();
                 auto duracion = duration_cast<milliseconds>(fin - inicio).count();
                 cout << "Tiempo de ejecucion: " << duracion << " ms\n";
+                cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
                 break;
             }
             case 4: {
+                int ifCount = 0;
                 auto inicio = steady_clock::now();
-                medioEnvioMasUtilizadoPorPais(ventas);
+                medioEnvioMasUtilizadoPorPais(ventas, ifCount);
                 auto fin = steady_clock::now();
                 auto duracion = duration_cast<milliseconds>(fin - inicio).count();
-                cout << "Tiempo de ejecucion: " << duracion << " ms\n";
+                cout << "\nTiempo de ejecucion: " << duracion << " ms\n";
+                cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
                 break;
             }
             case 5: {
+                int ifCount = 0;
                 auto inicio = steady_clock::now();
-                medioEnvioMasUtilizadoPorCategoria(ventas);
+                medioEnvioMasUtilizadoPorCategoria(ventas, ifCount);
                 auto fin = steady_clock::now();
                 auto duracion = duration_cast<milliseconds>(fin - inicio).count();
-                cout << "Tiempo de ejecucion: " << duracion << " ms\n";
+                cout << "\nTiempo de ejecucion: " << duracion << " ms\n";
+                cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
                 break;
             }
             case 6: {
+                int ifCount = 0;
                 auto inicio = steady_clock::now();
-                diaConMasVentas(ventas);
+                diaConMasVentas(ventas, ifCount);
                 auto fin = steady_clock::now();
                 auto duracion = duration_cast<milliseconds>(fin - inicio).count();
-                cout << "Tiempo de ejecucion: " << duracion << " ms\n";
+                cout << "\nTiempo de ejecucion: " << duracion << " ms\n";
+                cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
                 break;
             }
             case 7: {
+                int ifCount = 0;
                 auto inicio = steady_clock::now();
-                estadoEnvioMasFrecuentePorPais(ventas);
+                estadoEnvioMasFrecuentePorPais(ventas, ifCount);
                 auto fin = steady_clock::now();
                 auto duracion = duration_cast<milliseconds>(fin - inicio).count();
-                cout << "Tiempo de ejecucion: " << duracion << " ms\n";
+                cout << "\nTiempo de ejecucion: " << duracion << " ms\n";
+                cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
                 break;
             }
             case 8: {
+                int ifCount = 0;
                 auto inicio = steady_clock::now();
-                productoMasVendido(ventas);
+                productoMasVendido(ventas, ifCount);
                 auto fin = steady_clock::now();
                 auto duracion = duration_cast<milliseconds>(fin - inicio).count();
-                cout << "Tiempo de ejecucion: " << duracion << " ms\n";
+                cout << "\nTiempo de ejecucion: " << duracion << " ms\n";
+                cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
                 break;
             }
             case 9: {
+                int ifCount = 0;
                 auto inicio = steady_clock::now();
-                productoMenosVendido(ventas);
+                productoMenosVendido(ventas, ifCount);
                 auto fin = steady_clock::now();
                 auto duracion = duration_cast<milliseconds>(fin - inicio).count();
-                cout << "Tiempo de ejecucion: " << duracion << " ms\n";
+                cout << "\nTiempo de ejecucion: " << duracion << " ms\n";
+                cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
                 break;
             }
             case 10:
@@ -1175,11 +1200,96 @@ void menuConsultas() {
         }
 
         switch (opcion) {
-            case 1: consultaPorCiudad(todasLasVentas); break;
-            case 2: consultaPorFechaYPais(todasLasVentas); break;
-            case 3: compararDosPaises(datosAgregados); break;
-            case 4: compararDosProductos(datosAgregados); break;
-            case 5: buscarPorPromedio(datosAgregados); break;
+            case 1: {
+                int ifCount = 0;
+                string ciudad;
+                cout << "-> Ingrese el nombre de la ciudad: ";
+                getline(cin, ciudad);
+
+                auto inicio = steady_clock::now();
+                consultaPorCiudad(todasLasVentas, ciudad, ifCount);
+                auto fin = steady_clock::now();
+                auto duracion = duration_cast<milliseconds>(fin-inicio).count();
+                cout << "\nTiempo de ejecucion: " << duracion << "ms\n";
+                //TODO - ====================================================================================================
+                cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                break;
+            }
+            case 2: {
+                int ifCount = 0;
+                string pais, fechaInicio, fechaFin;
+                cout << "-> Ingrese el pais: ";
+                getline(cin, pais);
+                cout << "-> Ingrese la fecha de inicio (DD/MM/YYYY): ";
+                getline(cin, fechaInicio);
+                cout << "-> Ingrese la fecha de fin (DD/MM/YYYY): ";
+                getline(cin, fechaFin);
+
+                auto inicio = steady_clock::now();
+                consultaPorFechaYPais(todasLasVentas, pais, fechaInicio, fechaFin, ifCount);
+                auto fin = steady_clock::now();
+                auto duracion = duration_cast<milliseconds>(fin-inicio).count();
+                cout << "\nTiempo de ejecucion: " << duracion << "ms\n";
+                //TODO - ====================================================================================================
+                cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                break;
+            }
+            case 3: {
+                int ifCount = 0;
+                string p1, p2;
+                cout << "-> Ingrese el primer pais: ";
+                getline(cin, p1);
+                cout << "-> Ingrese el segundo pais: ";
+                getline(cin, p2);
+
+                auto inicio = steady_clock::now();
+                compararDosPaises(datosAgregados, p1, p2, ifCount);
+                auto fin = steady_clock::now();
+                auto duracion = duration_cast<milliseconds>(fin-inicio).count();
+                cout << "\nTiempo de ejecucion: " << duracion << "ms\n";
+                //TODO - ====================================================================================================
+                cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                break;
+            }
+            case 4: {
+                int ifCount = 0;
+                string prod1_str, prod2_str;
+                cout << "-> Ingrese el primer producto: ";
+                getline(cin, prod1_str);
+                cout << "-> Ingrese el segundo producto: ";
+                getline(cin, prod2_str);
+
+                auto inicio = steady_clock::now();
+                compararDosProductos(datosAgregados, prod1_str, prod2_str, ifCount);
+                auto fin = steady_clock::now();
+                auto duracion = duration_cast<milliseconds>(fin-inicio).count();
+                cout << "\nTiempo de ejecucion: " << duracion << "ms\n";
+                //TODO - ====================================================================================================
+                cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                break;
+            }
+            case 5: {
+                int ifCount = 0;
+                string pais, modo;
+                double umbral;
+                cout << "-> Ingrese el pais: ";
+                getline(cin, pais);
+                cout << "-> Ingrese el monto umbral (ej: 500): ";
+                cin >> umbral;
+                cout << "-> Buscar productos con promedio (mayor/menor) al umbral?: ";
+                cin >> modo;
+                // Limpiamos el buffer de entrada después de leer un número o palabra.
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+                auto inicio = steady_clock::now();
+                buscarPorPromedio(datosAgregados, pais, modo, umbral, ifCount);
+                auto fin = steady_clock::now();
+                auto duracion = duration_cast<milliseconds>(fin-inicio).count();
+                cout << "\nTiempo de ejecucion: " << duracion << "ms\n";
+                //TODO - ====================================================================================================
+                cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                break;
+            }
             case 0: cout << "Saliendo del modulo de consultas." << endl; break;
             default:
                 cout << "Opcion no valida. Intente de nuevo." << endl;
@@ -1212,7 +1322,7 @@ int main() {
         cout << "2. Modificar una venta" << endl;
         cout << "3. Agregar una venta" << endl;
         cout << "4. Eliminar una venta" << endl;
-        cout << "5. Consultas dinámicas" << endl;
+        cout << "5. Consultas dinamicas" << endl;
         cout << "6. Mostrar resumen de ventas" << endl;
         cout << "7. Salir" << endl;
         cout << "Ingrese una opcion: ";
