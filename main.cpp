@@ -9,12 +9,12 @@
 #include <iomanip>
 #include <chrono> // Para medir tiempos de ejecución
 #include <ctime> // En nuestra función fechaAEntero para la lógica de conversión.
-#include "Arbol/ArbolBinarioAVL.h"
+#include "ArbolBinarioAVL.h"
 #include "Estructuras.h"
 #include "Consultas.h"
 
 // Asegúrate de que esta ruta sea correcta para tu entorno.
-#define BASE_DE_DATOS "C:/Users/matia/Downloads/proyecto-2025-comision-tosetti-2404761-2415049-2416872-yedero-master/ventas_sudamerica.csv"
+#define BASE_DE_DATOS "ventas_sudamerica.csv"
 
 using namespace std;
 using namespace chrono;
@@ -28,12 +28,17 @@ string csvHeader = "idVenta,fecha,pais,ciudad,cliente,producto,categoria,cantida
 
 // ======= FUNCIONES AUXILIARES =======
 string trim(const string& str) {
+    // Trim
     size_t first = str.find_first_not_of(" \t\n\r");
-    if (string::npos == first) {
-        return str;
-    }
+    if (first == string::npos) return "";
+
     size_t last = str.find_last_not_of(" \t\n\r");
-    return str.substr(first, (last - first + 1));
+    string trimmed = str.substr(first, last - first + 1);
+
+    // Convertir a minúsculas
+    transform(trimmed.begin(), trimmed.end(), trimmed.begin(), ::tolower);
+
+    return trimmed;
 }
 
 string obtenerFechaActual() {
@@ -90,7 +95,7 @@ void cargarVentas(vector<Venta>& ventas) {
             if (!getline(ss, v.fecha, ',')) continue;
             if (!getline(ss, v.pais, ',')) continue; v.pais = trim(v.pais);
             if (!getline(ss, v.ciudad, ',')) continue; v.ciudad = trim(v.ciudad);
-            if (!getline(ss, v.cliente, ',')) continue;
+            if (!getline(ss, v.cliente, ',')) continue;v.cliente = trim(v.cliente);
             if (!getline(ss, v.producto, ',')) continue; v.producto = trim(v.producto);
             if (!getline(ss, v.categoria, ',')) continue; v.categoria = trim(v.categoria);
             if (!getline(ss, campo, ',')) continue; v.cantidad = stoi(campo);
@@ -198,14 +203,14 @@ void agregarVenta(vector<Venta>& ventas, Venta v) {
     } while (!entradaValida);
 
     switch (opcion) {
-        case 1: v.pais = "Argentina"; break;
-        case 2: v.pais = "Brasil"; break;
-        case 3: v.pais = "Chile"; break;
-        case 4: v.pais = "Colombia"; break;
-        case 5: v.pais = "Ecuador"; break;
-        case 6: v.pais = "Peru"; break;
-        case 7: v.pais = "Uruguay"; break;
-        case 8: v.pais = "Venezuela"; break;
+        case 1: v.pais = "argentina"; break;
+        case 2: v.pais = "brasil"; break;
+        case 3: v.pais = "chile"; break;
+        case 4: v.pais = "colombia"; break;
+        case 5: v.pais = "ecuador"; break;
+        case 6: v.pais = "peru"; break;
+        case 7: v.pais = "uruguay"; break;
+        case 8: v.pais = "venezuela"; break;
         default: ; // Nunca deberiamos llegar debido a la validación.
     }
 
@@ -213,8 +218,10 @@ void agregarVenta(vector<Venta>& ventas, Venta v) {
     cout<<"Ingrese su ciudad"<<endl;
     getline(cin,v.ciudad);
 
+
     cout<<"Ingrese su nombre y apellido"<<endl;
     getline(cin,v.cliente);
+
 
     int opcion2=0;
     string entrada2;
@@ -249,19 +256,18 @@ void agregarVenta(vector<Venta>& ventas, Venta v) {
     } while (!entrada2Valida);
 
     switch (opcion2) {
-        case 1: v.producto="Auriculares"; v.categoria="Accesorios"; break;
-        case 2: v.producto="Celular"; v.categoria="Electronica"; break;
-        case 3: v.producto="Cámara"; v.categoria="Electronica"; break;
-        case 4: v.producto="Escritorio"; v.categoria="Muebles"; break;
-        case 5: v.producto="Impresora"; v.categoria="Oficina"; break;
-        case 6: v.producto="Laptop"; v.categoria="Electronica"; break;
-        case 7: v.producto="Monitor"; v.categoria="Electronica"; break;
-        case 8: v.producto="Silla ergonómica"; v.categoria="Muebles"; break;
-        case 9: v.producto="Tablet"; v.categoria="Electronica"; break;
-        case 10: v.producto="Teclado"; v.categoria="Accesorios"; break;
+        case 1: v.producto="auriculares"; v.categoria="accesorios"; break;
+        case 2: v.producto="celular"; v.categoria="electronica"; break;
+        case 3: v.producto="cámara"; v.categoria="electronica"; break;
+        case 4: v.producto="escritorio"; v.categoria="muebles"; break;
+        case 5: v.producto="impresora"; v.categoria="oficina"; break;
+        case 6: v.producto="laptop"; v.categoria="electronica"; break;
+        case 7: v.producto="monitor"; v.categoria="electronica"; break;
+        case 8: v.producto="silla ergonómica"; v.categoria="muebles"; break;
+        case 9: v.producto="tablet"; v.categoria="electronica"; break;
+        case 10: v.producto="teclado"; v.categoria="accesorios"; break;
         default: ; // Inalcanzable
     }
-
     string cantidadStr;
     bool cantidadValida = false;
     do {
@@ -332,13 +338,13 @@ void agregarVenta(vector<Venta>& ventas, Venta v) {
     } while (!medioValido);
 
     switch (medioEnvio) {
-        case 1: v.medioEnvio = "Terrestre"; break;
-        case 2: v.medioEnvio = "Marítimo"; break;
-        case 3: v.medioEnvio = "Aéreo"; break;
+        case 1: v.medioEnvio = "terrestre"; break;
+        case 2: v.medioEnvio = "marítimo"; break;
+        case 3: v.medioEnvio = "aéreo"; break;
         default: ; // Inalcanzable
     }
 
-    v.estadoEnvio="Pendiente";
+    v.estadoEnvio="pendiente";
 
     // Escribe la nueva venta al final del archivo CSV.
     // NOTA: Con la corrección de reescribir todo el archivo, esta parte ya no es
@@ -362,8 +368,8 @@ void agregarVenta(vector<Venta>& ventas, Venta v) {
         reescrituraArchivo << ventaActual.idVenta << ","
                            << ventaActual.fecha << ","
                            << ventaActual.pais << ","
-                           << ventaActual.ciudad << ","
-                           << ventaActual.cliente << ","
+                           << trim(ventaActual.ciudad) << ","
+                           << trim(ventaActual.cliente) << ","
                            << ventaActual.producto << ","
                            << ventaActual.categoria << ","
                            << ventaActual.cantidad << ","
