@@ -114,7 +114,6 @@ void cargarVentas(vector<Venta>& ventas) {
     cout << "Ventas cargadas correctamente. Total: " << ventas.size() << " registros." << endl;
 }
 
-
 // Esta funcion toma el vector de ventas crudas y crea el mapa agregado
 void procesarDatosAgregados(const vector<Venta>& todasLasVentas, MapaPaises& datosAgregados) {
     // Limpiamos el mapa por si tenia datos anteriores
@@ -132,7 +131,6 @@ void procesarDatosAgregados(const vector<Venta>& todasLasVentas, MapaPaises& dat
     }
     cout << "Datos procesados para consultas analiticas." << endl;
 }
-
 
 // ======= FUNCIONES DE MODIFICACIoN =======
 void agregarVenta(vector<Venta>& ventas, Venta v) {
@@ -585,7 +583,7 @@ void modificarVenta(vector<Venta>& bdVector) {
             cout << "Producto y categoria modificados correctamente, su nuevo producot es:"<<ventaAModificarEnVector->producto<<"\n";
             // Recalcular monto total si es necesario (aunque producto no afecta precio directamente aqui)
             // ventaAModificarEnVector->montoTotal = ventaAModificarEnVector->cantidad * ventaAModificarEnVector->precioUnitario;
-            // cout << "Monto total recalculado: " << fixed << setprecision(2) << ventaAModificarEnVector->montoTotal << endl;
+            // cout << "Monto total recalculado:" << fixed << setprecision(2) << ventaAModificarEnVector->montoTotal << endl;
             break;
         }
         case 5: { // Modificar Cantidad
@@ -1223,7 +1221,7 @@ void menuConsultas() {
                 getline(cin, ciudad);
 
                 auto inicio = steady_clock::now();
-                consultaPorCiudad(todasLasVentas, ciudad, ifCount);
+                consultaPorCiudad(todasLasVentas, trim(ciudad), ifCount);
                 auto fin = steady_clock::now();
                 auto duracion = duration_cast<milliseconds>(fin-inicio).count();
                 cout << "\nTiempo de ejecucion: " << duracion << "ms\n";
@@ -1242,7 +1240,7 @@ void menuConsultas() {
                 getline(cin, fechaFin);
 
                 auto inicio = steady_clock::now();
-                consultaPorFechaYPais(todasLasVentas, pais, fechaInicio, fechaFin, ifCount);
+                consultaPorFechaYPais(todasLasVentas, trim(pais), fechaInicio, fechaFin, ifCount);
                 auto fin = steady_clock::now();
                 auto duracion = duration_cast<milliseconds>(fin-inicio).count();
                 cout << "\nTiempo de ejecucion: " << duracion << "ms\n";
@@ -1259,7 +1257,7 @@ void menuConsultas() {
                 getline(cin, p2);
 
                 auto inicio = steady_clock::now();
-                compararDosPaises(datosAgregados, p1, p2, ifCount);
+                compararDosPaises(datosAgregados, trim(p1), trim(p2), ifCount);
                 auto fin = steady_clock::now();
                 auto duracion = duration_cast<milliseconds>(fin-inicio).count();
                 cout << "\nTiempo de ejecucion: " << duracion << "ms\n";
@@ -1276,7 +1274,7 @@ void menuConsultas() {
                 getline(cin, prod2_str);
 
                 auto inicio = steady_clock::now();
-                compararDosProductos(datosAgregados, prod1_str, prod2_str, ifCount);
+                compararDosProductos(datosAgregados, trim(prod1_str), trim(prod2_str), ifCount);
                 auto fin = steady_clock::now();
                 auto duracion = duration_cast<milliseconds>(fin-inicio).count();
                 cout << "\nTiempo de ejecucion: " << duracion << "ms\n";
@@ -1298,7 +1296,7 @@ void menuConsultas() {
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
                 auto inicio = steady_clock::now();
-                buscarPorPromedio(datosAgregados, pais, modo, umbral, ifCount);
+                buscarPorPromedio(datosAgregados, trim(pais), trim(modo), umbral, ifCount);
                 auto fin = steady_clock::now();
                 auto duracion = duration_cast<milliseconds>(fin-inicio).count();
                 cout << "\nTiempo de ejecucion: " << duracion << "ms\n";
