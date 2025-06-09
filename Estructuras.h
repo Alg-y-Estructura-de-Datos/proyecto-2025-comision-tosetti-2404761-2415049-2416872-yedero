@@ -36,36 +36,36 @@ struct Venta {
     }
 
     // Operador mayor que (>)
-    // Puedes definirlo en términos de <, o directamente.
+    // Puedes definirlo en terminos de <, o directamente.
     bool operator>(const Venta& other) const {
         return idVenta > other.idVenta;
     }
 
-    // Operador no igual (!=) - A menudo útil, se puede definir en términos de ==
+    // Operador no igual (!=) - A menudo util, se puede definir en terminos de ==
     bool operator!=(const Venta& other) const {
         return !(*this == other); // o return idVenta != other.idVenta;
     }
 
-    // Operador menor o igual (<=) - Si es necesario para tu árbol
+    // Operador menor o igual (<=) - Si es necesario para tu arbol
     bool operator<=(const Venta& other) const {
         return idVenta <= other.idVenta; // o !(*this > other)
     }
 
-    // Operador mayor o igual (>=) - Si es necesario para tu árbol
+    // Operador mayor o igual (>=) - Si es necesario para tu arbol
     bool operator>=(const Venta& other) const {
         return idVenta >= other.idVenta; // o !(*this < other)
     }
 };
 
-// Struct para guardar las estadísticas finales de forma agregada
+// Struct para guardar las estadisticas finales de forma agregada
 struct EstadisticasAgregadas {
     double montoTotalVendido = 0.0;
     int cantidadTotalVendida = 0;
-    // Usamos otro unordered_map para contar eficientemente los medios de envío
+    // Usamos otro unordered_map para contar eficientemente los medios de envio
     unordered_map<string, int> conteoMediosEnvio;
 };
 
-// Definimos alias para nuestros tipos de mapas anidados para que el código sea más legible
+// Definimos alias para nuestros tipos de mapas anidados para que el codigo sea mas legible
 using MapaProductos = unordered_map<string, EstadisticasAgregadas>;
 using MapaPaises = unordered_map<string, MapaProductos>;
 

@@ -7,13 +7,13 @@
 #include <limits> // Lo usamos para limpiar el buffer de entrada
 #include <sstream> // Para leer nuestro archivo CSV
 #include <iomanip>
-#include <chrono> // Para medir tiempos de ejecución
-#include <ctime> // En nuestra función fechaAEntero para la lógica de conversión.
-#include "ArbolBinarioAVL.h"
+#include <chrono> // Para medir tiempos de ejecucion
+#include <ctime> // En nuestra funcion fechaAEntero para la logica de conversion.
+#include "Arbol/ArbolBinarioAVL.h"
 #include "Estructuras.h"
 #include "Consultas.h"
 
-// Asegúrate de que esta ruta sea correcta para tu entorno.
+// Asegurate de que esta ruta sea correcta para tu entorno.
 #define BASE_DE_DATOS "ventas_sudamerica.csv"
 
 using namespace std;
@@ -21,8 +21,8 @@ using namespace chrono;
 
 
 // Variable global para almacenar el encabezado del CSV.
-// Es una solución simple para este caso; en una aplicación más grande,
-// se podría pasar como parámetro o ser parte de una clase de gestión de datos.
+// Es una solucion simple para este caso; en una aplicacion mas grande,
+// se podria pasar como parametro o ser parte de una clase de gestion de datos.
 string csvHeader = "idVenta,fecha,pais,ciudad,cliente,producto,categoria,cantidad,precioUnitario,montoTotal,medioEnvio,estadoEnvio";
 
 
@@ -35,7 +35,7 @@ string trim(const string& str) {
     size_t last = str.find_last_not_of(" \t\n\r");
     string trimmed = str.substr(first, last - first + 1);
 
-    // Convertir a minúsculas
+    // Convertir a minusculas
     transform(trimmed.begin(), trimmed.end(), trimmed.begin(), ::tolower);
 
     return trimmed;
@@ -56,26 +56,26 @@ void cargarVentas(vector<Venta>& ventas) {
 
     ifstream archivo(BASE_DE_DATOS);
     if (!archivo.is_open()) {
-        // En lugar de salir, podrías crear el archivo si no existe
+        // En lugar de salir, podrias crear el archivo si no existe
         ofstream crearArchivo(BASE_DE_DATOS);
         if (crearArchivo.is_open()) {
-            cout << "El archivo de base de datos no existía y ha sido creado." << endl;
-            // Escribe el encabezado en el archivo recién creado
+            cout << "El archivo de base de datos no existia y ha sido creado." << endl;
+            // Escribe el encabezado en el archivo recien creado
             crearArchivo << csvHeader << endl;
             crearArchivo.close();
-            ventas.clear(); // El vector está vacío, ya que el archivo estaba vacío
+            ventas.clear(); // El vector esta vacio, ya que el archivo estaba vacio
             return;
         } else {
-            cout << "Error CRÍTICO: No se pudo abrir ni crear el archivo de base de datos." << endl;
+            cout << "Error CRiTICO: No se pudo abrir ni crear el archivo de base de datos." << endl;
             return; // No se puede continuar sin el archivo
         }
     }
 
     string linea;
-    // Leer la primera línea (encabezado) y guardarla, pero no procesarla como datos.
-    // Si el archivo está vacío, getline devolverá falso, y el encabezado global se mantiene.
+    // Leer la primera linea (encabezado) y guardarla, pero no procesarla como datos.
+    // Si el archivo esta vacio, getline devolvera falso, y el encabezado global se mantiene.
     if (getline(archivo, linea)) {
-        // Opcional: podrías verificar si 'linea' coincide con tu 'csvHeader' esperado.
+        // Opcional: podrias verificar si 'linea' coincide con tu 'csvHeader' esperado.
         // Pero para este problema, solo necesitamos asegurarnos de que se lea y se salte.
         // Asignamos a csvHeader si es que existe en el archivo
         csvHeader = linea;
@@ -89,7 +89,7 @@ void cargarVentas(vector<Venta>& ventas) {
         Venta v;
 
         // Es importante verificar que se pueda leer cada campo.
-        // Si una línea está mal formateada (menos campos), esto evitará un crash.
+        // Si una linea esta mal formateada (menos campos), esto evitara un crash.
         try {
             if (!getline(ss, campo, ',')) continue; v.idVenta = stoi(campo);
             if (!getline(ss, v.fecha, ',')) continue;
@@ -106,8 +106,8 @@ void cargarVentas(vector<Venta>& ventas) {
 
             ventas.push_back(v);
         } catch (const exception& e) {
-            cout << "Advertencia: Salto una línea mal formateada en el CSV: " << linea << " (" << e.what() << ")" << endl;
-            continue; // Saltar a la siguiente línea si hay un error de parseo
+            cout << "Advertencia: Salto una linea mal formateada en el CSV: " << linea << " (" << e.what() << ")" << endl;
+            continue; // Saltar a la siguiente linea si hay un error de parseo
         }
     }
     archivo.close();
@@ -115,17 +115,17 @@ void cargarVentas(vector<Venta>& ventas) {
 }
 
 
-// Esta función toma el vector de ventas crudas y crea el mapa agregado
+// Esta funcion toma el vector de ventas crudas y crea el mapa agregado
 void procesarDatosAgregados(const vector<Venta>& todasLasVentas, MapaPaises& datosAgregados) {
-    // Limpiamos el mapa por si tenía datos anteriores
+    // Limpiamos el mapa por si tenia datos anteriores
     datosAgregados.clear();
 
     for (const auto& v : todasLasVentas) {
-        // La magia del operador[] de unordered_map hace esto increíblemente simple.
+        // La magia del operador[] de unordered_map hace esto increiblemente simple.
         // Si la clave no existe, la crea; si existe, devuelve una referencia al valor.
         EstadisticasAgregadas& stats = datosAgregados[v.pais][v.producto];
 
-        // Actualizamos las estadísticas directamente.
+        // Actualizamos las estadisticas directamente.
         stats.montoTotalVendido += v.montoTotal;
         stats.cantidadTotalVendida += v.cantidad;
         stats.conteoMediosEnvio[v.medioEnvio]++;
@@ -134,11 +134,11 @@ void procesarDatosAgregados(const vector<Venta>& todasLasVentas, MapaPaises& dat
 }
 
 
-// ======= FUNCIONES DE MODIFICACIÓN =======
+// ======= FUNCIONES DE MODIFICACIoN =======
 void agregarVenta(vector<Venta>& ventas, Venta v) {
     // Para asegurar que el archivo tenga el encabezado al agregar la primera venta
     // o si el archivo fue borrado/corrupto.
-    ofstream archivo(BASE_DE_DATOS, ios::out | ios::trunc); // Abrir en modo truncado para reescribir si está vacío
+    ofstream archivo(BASE_DE_DATOS, ios::out | ios::trunc); // Abrir en modo truncado para reescribir si esta vacio
     if (!archivo.is_open()) {
         cout << "No se pudo abrir el archivo para escritura." << endl;
         return;
@@ -176,7 +176,7 @@ void agregarVenta(vector<Venta>& ventas, Venta v) {
     v.fecha = obtenerFechaActual();
     cout << "Fecha: " << v.fecha << endl;
 
-    // --- Lógica de entrada de datos para la nueva venta (país, ciudad, cliente, producto, etc.) ---
+    // --- Logica de entrada de datos para la nueva venta (pais, ciudad, cliente, producto, etc.) ---
     int opcion = 0;
     string entrada;
     bool entradaValida = false;
@@ -195,7 +195,7 @@ void agregarVenta(vector<Venta>& ventas, Venta v) {
                 entradaValida = true;
             }
         } catch (const exception& e) {
-            cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+            cout << "Entrada invalida: " << e.what() << ". Intente nuevamente.\n";
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
         }
@@ -211,7 +211,7 @@ void agregarVenta(vector<Venta>& ventas, Venta v) {
         case 6: v.pais = "peru"; break;
         case 7: v.pais = "uruguay"; break;
         case 8: v.pais = "venezuela"; break;
-        default: ; // Nunca deberiamos llegar debido a la validación.
+        default: ; // Nunca deberiamos llegar debido a la validacion.
     }
 
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -231,12 +231,12 @@ void agregarVenta(vector<Venta>& ventas, Venta v) {
         cout<<"Seleccione el producto que desea comprar: "<<endl;
         cout<<"1. Auriculares"<<endl;
         cout<<"2. Celular"<<endl;
-        cout<<"3. Cámara"<<endl;
+        cout<<"3. Camara"<<endl;
         cout<<"4. Escritorio"<<endl;
         cout<<"5. Impresora"<<endl;
         cout<<"6. Laptop"<<endl;
         cout<<"7. Monitor"<<endl;
-        cout<<"8. Silla ergonómica"<<endl;
+        cout<<"8. Silla ergonomica"<<endl;
         cout<<"9. Tablet"<<endl;
         cout<<"10. Teclado"<<endl;
         cin>>entrada2;
@@ -249,7 +249,7 @@ void agregarVenta(vector<Venta>& ventas, Venta v) {
             }
         }
         catch (const exception& e) {
-        cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+        cout << "Entrada invalida: " << e.what() << ". Intente nuevamente.\n";
         cin.clear();
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
         }
@@ -258,12 +258,12 @@ void agregarVenta(vector<Venta>& ventas, Venta v) {
     switch (opcion2) {
         case 1: v.producto="auriculares"; v.categoria="accesorios"; break;
         case 2: v.producto="celular"; v.categoria="electronica"; break;
-        case 3: v.producto="cámara"; v.categoria="electronica"; break;
+        case 3: v.producto="camara"; v.categoria="electronica"; break;
         case 4: v.producto="escritorio"; v.categoria="muebles"; break;
         case 5: v.producto="impresora"; v.categoria="oficina"; break;
         case 6: v.producto="laptop"; v.categoria="electronica"; break;
         case 7: v.producto="monitor"; v.categoria="electronica"; break;
-        case 8: v.producto="silla ergonómica"; v.categoria="muebles"; break;
+        case 8: v.producto="silla ergonomica"; v.categoria="muebles"; break;
         case 9: v.producto="tablet"; v.categoria="electronica"; break;
         case 10: v.producto="teclado"; v.categoria="accesorios"; break;
         default: ; // Inalcanzable
@@ -282,7 +282,7 @@ void agregarVenta(vector<Venta>& ventas, Venta v) {
             }
         }
         catch (const exception& e) {
-            cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+            cout << "Entrada invalida: " << e.what() << ". Intente nuevamente.\n";
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
         }
@@ -303,7 +303,7 @@ void agregarVenta(vector<Venta>& ventas, Venta v) {
                 precioValido = true;
             }
         } catch (const exception& e) {
-            cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+            cout << "Entrada invalida: " << e.what() << ". Intente nuevamente.\n";
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
         }
@@ -339,28 +339,28 @@ void agregarVenta(vector<Venta>& ventas, Venta v) {
 
     switch (medioEnvio) {
         case 1: v.medioEnvio = "terrestre"; break;
-        case 2: v.medioEnvio = "marítimo"; break;
-        case 3: v.medioEnvio = "aéreo"; break;
+        case 2: v.medioEnvio = "maritimo"; break;
+        case 3: v.medioEnvio = "aereo"; break;
         default: ; // Inalcanzable
     }
 
     v.estadoEnvio="pendiente";
 
     // Escribe la nueva venta al final del archivo CSV.
-    // NOTA: Con la corrección de reescribir todo el archivo, esta parte ya no es
-    // estrictamente "al final" del archivo después de abrir con ios::app.
+    // NOTA: Con la correccion de reescribir todo el archivo, esta parte ya no es
+    // estrictamente "al final" del archivo despues de abrir con ios::app.
     // Ahora, agregamos 'v' al vector y luego reescribimos todo el vector.
-    // El archivo se abre en truncado al principio de la función, se escribe el encabezado,
-    // se escriben las ventas anteriores, y luego se agregará esta nueva venta al vector.
+    // El archivo se abre en truncado al principio de la funcion, se escribe el encabezado,
+    // se escriben las ventas anteriores, y luego se agregara esta nueva venta al vector.
 
-    // ¡IMPORTANTE! Agrega la nueva venta también al vector en memoria.
+    // ¡IMPORTANTE! Agrega la nueva venta tambien al vector en memoria.
     ventas.push_back(v);
 
     // Ahora reescribe todo el archivo con la nueva venta incluida
     // Esto es crucial para que los cambios persistan y el encabezado se mantenga.
     ofstream reescrituraArchivo(BASE_DE_DATOS, ios::out | ios::trunc); // Abrir en modo truncado
     if (!reescrituraArchivo.is_open()) {
-        cout << "Error CRÍTICO: No se pudo reabrir el archivo para reescritura. Los cambios no se guardaron permanentemente." << endl;
+        cout << "Error CRiTICO: No se pudo reabrir el archivo para reescritura. Los cambios no se guardaron permanentemente." << endl;
         return;
     }
     reescrituraArchivo << csvHeader << endl; // Vuelve a escribir el encabezado
@@ -385,52 +385,52 @@ void agregarVenta(vector<Venta>& ventas, Venta v) {
 
 void modificarVenta(vector<Venta>& bdVector) {
     if (bdVector.empty()) {
-        cout << "La base de datos (vector) está vacía. No hay ventas para modificar.\n";
+        cout << "La base de datos (vector) esta vacia. No hay ventas para modificar.\n";
         return;
     }
 
-    // 1. Crear un Árbol AVL para acceso rápido y validación de existencia.
+    // 1. Crear un arbol AVL para acceso rapido y validacion de existencia.
     ArbolBinarioAVL<Venta> arbolDeVentas;
     for (const auto& ventaActual : bdVector) {
-        arbolDeVentas.put(ventaActual); // introducimos todas las ventas en un árbol Balanceado
+        arbolDeVentas.put(ventaActual); // introducimos todas las ventas en un arbol Balanceado
     }
 
     // 2. Solicitar el ID de la venta a modificar.
     int idModificarNum;
     string entradaID;
     bool idValido = false;
-    Venta ventaParaBuscar; // Venta temporal para usar en la búsqueda del árbol
+    Venta ventaParaBuscar; // Venta temporal para usar en la busqueda del arbol
 
     do {
         cout << "Ingrese el ID de la venta que desea modificar: ";
         cin >> entradaID;
         try {
             idModificarNum = stoi(entradaID);
-            ventaParaBuscar.idVenta = idModificarNum; // Asignar el ID a la venta de búsqueda
+            ventaParaBuscar.idVenta = idModificarNum; // Asignar el ID a la venta de busqueda
 
-            // Intentar buscar en el árbol AVL para validar la existencia del ID
-            // Asumimos que arbol.search() lanza una excepción si no encuentra el elemento.
-            // El valor devuelto por search() no se usa directamente aquí, solo se verifica la existencia.
+            // Intentar buscar en el arbol AVL para validar la existencia del ID
+            // Asumimos que arbol.search() lanza una excepcion si no encuentra el elemento.
+            // El valor devuelto por search() no se usa directamente aqui, solo se verifica la existencia.
             arbolDeVentas.search(ventaParaBuscar);
-            idValido = true; // Si search() no lanzó excepción, el ID existe
+            idValido = true; // Si search() no lanzo excepcion, el ID existe
 
         } catch (const invalid_argument& e_stoi) {
-            cout << "Entrada inválida para ID (no es un número): " << e_stoi.what() << ". Intente nuevamente.\n";
+            cout << "Entrada invalida para ID (no es un numero): " << e_stoi.what() << ". Intente nuevamente.\n";
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
         } catch (const out_of_range& e_stoi_range) {
-            cout << "Entrada inválida para ID (número fuera de rango): " << e_stoi_range.what() << ". Intente nuevamente.\n";
+            cout << "Entrada invalida para ID (numero fuera de rango): " << e_stoi_range.what() << ". Intente nuevamente.\n";
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        } catch (const exception& e_avl) { // Captura la excepción esperada de arbol.search si no encuentra
-            cout << "ID de venta no encontrado en el árbol: " << e_avl.what() << ". Intente nuevamente.\n";
+        } catch (const exception& e_avl) { // Captura la excepcion esperada de arbol.search si no encuentra
+            cout << "ID de venta no encontrado en el arbol: " << e_avl.what() << ". Intente nuevamente.\n";
             // idValido permanece false
              cin.clear(); // Limpiar flags de error de cin
              cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Descartar entrada incorrecta
         }
     } while (!idValido);
 
-    // El ID es válido y existe en el árbol. Ahora obtenemos una referencia a la venta en bdVector.
+    // El ID es valido y existe en el arbol. Ahora obtenemos una referencia a la venta en bdVector.
     Venta* ventaAModificarEnVector = nullptr;
     for (size_t i = 0; i < bdVector.size(); ++i) {
         if (bdVector[i].idVenta == idModificarNum) {
@@ -440,8 +440,8 @@ void modificarVenta(vector<Venta>& bdVector) {
     }
 
     if (!ventaAModificarEnVector) {
-        // Esto no debería ocurrir si el árbol se construyó correctamente desde bdVector y el ID se validó.
-        cout << "Error crítico: El ID fue validado pero la venta no se encontró en el vector fuente. Abortando modificación.\n";
+        // Esto no deberia ocurrir si el arbol se construyo correctamente desde bdVector y el ID se valido.
+        cout << "Error critico: El ID fue validado pero la venta no se encontro en el vector fuente. Abortando modificacion.\n";
         return;
     }
 
@@ -449,16 +449,16 @@ void modificarVenta(vector<Venta>& bdVector) {
     cout << "\n--- Venta seleccionada para modificar ---\n";
     cout << "ID: " << ventaAModificarEnVector->idVenta << endl;
     cout << "Fecha: " << ventaAModificarEnVector->fecha << endl;
-    cout << "País: " << ventaAModificarEnVector->pais << endl;
+    cout << "Pais: " << ventaAModificarEnVector->pais << endl;
     cout << "Ciudad: " << ventaAModificarEnVector->ciudad << endl;
     cout << "Cliente: " << ventaAModificarEnVector->cliente << endl;
     cout << "Producto: " << ventaAModificarEnVector->producto << endl;
-    cout << "Categoría: " << ventaAModificarEnVector->categoria << endl;
+    cout << "Categoria: " << ventaAModificarEnVector->categoria << endl;
     cout << "Cantidad: " << ventaAModificarEnVector->cantidad << endl;
     cout << "Precio unitario: " << fixed << setprecision(2) << ventaAModificarEnVector->precioUnitario << endl;
     cout << "Monto total: " << fixed << setprecision(2) << ventaAModificarEnVector->montoTotal << endl;
-    cout << "Medio de envío: " << ventaAModificarEnVector->medioEnvio << endl;
-    cout << "Estado de envío: " << ventaAModificarEnVector->estadoEnvio << endl;
+    cout << "Medio de envio: " << ventaAModificarEnVector->medioEnvio << endl;
+    cout << "Estado de envio: " << ventaAModificarEnVector->estadoEnvio << endl;
     cout << "--------------------------------------\n";
 
     // 4. Solicitar el campo a modificar.
@@ -467,16 +467,16 @@ void modificarVenta(vector<Venta>& bdVector) {
     bool campoValido = false;
 
     do {
-        cout << "\n¿Qué campo desea modificar?\n";
-        cout << "1. País\n";
+        cout << "\n¿Que campo desea modificar?\n";
+        cout << "1. Pais\n";
         cout << "2. Ciudad\n";
         cout << "3. Cliente\n";
-        cout << "4. Producto\n"; // Modifica Producto y Categoría
+        cout << "4. Producto\n"; // Modifica Producto y Categoria
         cout << "5. Cantidad\n";
         cout << "6. Precio Unitario\n";
-        cout << "7. Medio de Envío\n";
-        cout << "8. Estado de Envío\n";
-        cout << "Opción: ";
+        cout << "7. Medio de Envio\n";
+        cout << "8. Estado de Envio\n";
+        cout << "Opcion: ";
         cin >> entradaCampo;
 
         try {
@@ -484,10 +484,10 @@ void modificarVenta(vector<Venta>& bdVector) {
             if (opcionCampo >= 1 && opcionCampo <= 8) {
                 campoValido = true;
             } else {
-                cout << "Opción fuera de rango. Intente nuevamente.\n";
+                cout << "Opcion fuera de rango. Intente nuevamente.\n";
             }
         } catch (const exception& e) {
-            cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+            cout << "Entrada invalida: " << e.what() << ". Intente nuevamente.\n";
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
         }
@@ -495,27 +495,27 @@ void modificarVenta(vector<Venta>& bdVector) {
 
     cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Limpiar buffer para getline
 
-    // 5. Aplicar la modificación según el campo seleccionado.
+    // 5. Aplicar la modificacion segun el campo seleccionado.
     // Las modificaciones se hacen directamente en ventaAModificarEnVector.
     switch (opcionCampo) {
-        case 1: { // Modificar País
+        case 1: { // Modificar Pais
             int opcionPais = 0;
             string entradaPais;
             bool paisValido = false;
             do {
-                cout << "Seleccione el nuevo país:\n";
+                cout << "Seleccione el nuevo pais:\n";
                 cout << "1. Argentina\n2. Brasil\n3. Chile\n4. Colombia\n5. Ecuador\n6. Peru\n7. Uruguay\n8. Venezuela\n";
-                cout << "Opción: ";
+                cout << "Opcion: ";
                 cin >> entradaPais;
                 try {
                     opcionPais = stoi(entradaPais);
                     if (opcionPais >= 1 && opcionPais <= 8) {
                         paisValido = true;
                     } else {
-                        cout << "Opción fuera de rango. Intente nuevamente.\n";
+                        cout << "Opcion fuera de rango. Intente nuevamente.\n";
                     }
                 } catch (const exception& e) {
-                    cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+                    cout << "Entrada invalida: " << e.what() << ". Intente nuevamente.\n";
                     cin.clear();
                     cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 }
@@ -530,7 +530,7 @@ void modificarVenta(vector<Venta>& bdVector) {
                 case 7: ventaAModificarEnVector->pais = "Uruguay"; break;
                 case 8: ventaAModificarEnVector->pais = "Venezuela"; break;
             }
-            cout << "País modificado correctamente por: "<<ventaAModificarEnVector->pais<<"\n";
+            cout << "Pais modificado correctamente por: "<<ventaAModificarEnVector->pais<<"\n";
             break;
         }
         case 2: { // Modificar Ciudad
@@ -545,45 +545,45 @@ void modificarVenta(vector<Venta>& bdVector) {
             cout << "Nombre del cliente reemplazado correctamente por: "<<ventaAModificarEnVector->cliente<<"\n";
             break;
         }
-        case 4: { // Modificar Producto y Categoría
+        case 4: { // Modificar Producto y Categoria
             int opcionProducto = 0;
             string entradaProducto;
             bool productoValido = false;
             do {
                 cout << "Seleccione el nuevo producto:\n";
-                cout << "1. Auriculares\n2. Celular\n3. Cámara\n4. Escritorio\n5. Impresora\n6. Laptop\n7. Monitor\n8. Silla ergonómica\n9. Tablet\n10. Teclado\n";
-                cout << "Opción: ";
+                cout << "1. Auriculares\n2. Celular\n3. Camara\n4. Escritorio\n5. Impresora\n6. Laptop\n7. Monitor\n8. Silla ergonomica\n9. Tablet\n10. Teclado\n";
+                cout << "Opcion: ";
                 cin >> entradaProducto;
                 try {
                     opcionProducto = stoi(entradaProducto);
                     if (opcionProducto >= 1 && opcionProducto <= 10) {
                         productoValido = true;
                     } else {
-                        cout << "Opción fuera de rango. Intente nuevamente.\n";
+                        cout << "Opcion fuera de rango. Intente nuevamente.\n";
                     }
                 } catch (const exception& e) {
-                    cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+                    cout << "Entrada invalida: " << e.what() << ". Intente nuevamente.\n";
                     cin.clear();
                     cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 }
             } while (!productoValido);
-            // No es necesario cin.ignore() aquí porque la lectura fue de un string que se convirtió
-            // y la siguiente lectura será probablemente un cout. Si fuera un getline, sí.
+            // No es necesario cin.ignore() aqui porque la lectura fue de un string que se convirtio
+            // y la siguiente lectura sera probablemente un cout. Si fuera un getline, si.
 
             switch (opcionProducto) {
                 case 1: ventaAModificarEnVector->producto = "Auriculares"; ventaAModificarEnVector->categoria = "Accesorios"; break;
                 case 2: ventaAModificarEnVector->producto = "Celular"; ventaAModificarEnVector->categoria = "Electronica"; break;
-                case 3: ventaAModificarEnVector->producto = "Cámara"; ventaAModificarEnVector->categoria = "Electronica"; break;
+                case 3: ventaAModificarEnVector->producto = "Camara"; ventaAModificarEnVector->categoria = "Electronica"; break;
                 case 4: ventaAModificarEnVector->producto = "Escritorio"; ventaAModificarEnVector->categoria = "Muebles"; break;
                 case 5: ventaAModificarEnVector->producto = "Impresora"; ventaAModificarEnVector->categoria = "Oficina"; break;
                 case 6: ventaAModificarEnVector->producto = "Laptop"; ventaAModificarEnVector->categoria = "Electronica"; break;
                 case 7: ventaAModificarEnVector->producto = "Monitor"; ventaAModificarEnVector->categoria = "Electronica"; break;
-                case 8: ventaAModificarEnVector->producto = "Silla ergonómica"; ventaAModificarEnVector->categoria = "Muebles"; break;
+                case 8: ventaAModificarEnVector->producto = "Silla ergonomica"; ventaAModificarEnVector->categoria = "Muebles"; break;
                 case 9: ventaAModificarEnVector->producto = "Tablet"; ventaAModificarEnVector->categoria = "Electronica"; break;
                 case 10: ventaAModificarEnVector->producto = "Teclado"; ventaAModificarEnVector->categoria = "Accesorios"; break;
             }
-            cout << "Producto y categoría modificados correctamente, su nuevo producot es:"<<ventaAModificarEnVector->producto<<"\n";
-            // Recalcular monto total si es necesario (aunque producto no afecta precio directamente aquí)
+            cout << "Producto y categoria modificados correctamente, su nuevo producot es:"<<ventaAModificarEnVector->producto<<"\n";
+            // Recalcular monto total si es necesario (aunque producto no afecta precio directamente aqui)
             // ventaAModificarEnVector->montoTotal = ventaAModificarEnVector->cantidad * ventaAModificarEnVector->precioUnitario;
             // cout << "Monto total recalculado: " << fixed << setprecision(2) << ventaAModificarEnVector->montoTotal << endl;
             break;
@@ -604,7 +604,7 @@ void modificarVenta(vector<Venta>& bdVector) {
                         cout << "La cantidad debe ser mayor que cero.\n";
                     }
                 } catch (const exception& e) {
-                    cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+                    cout << "Entrada invalida: " << e.what() << ". Intente nuevamente.\n";
                     cin.clear();
                     cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 }
@@ -629,7 +629,7 @@ void modificarVenta(vector<Venta>& bdVector) {
                         cout << "El precio debe ser mayor que cero.\n";
                     }
                 } catch (const exception& e) {
-                    cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+                    cout << "Entrada invalida: " << e.what() << ". Intente nuevamente.\n";
                     cin.clear();
                     cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 }
@@ -638,54 +638,54 @@ void modificarVenta(vector<Venta>& bdVector) {
             cout << "Precio unitario modificado correctamente. Nuevo monto total: " << fixed << setprecision(2) << ventaAModificarEnVector->montoTotal << endl;
             break;
         }
-        case 7: { // Modificar Medio de Envío
+        case 7: { // Modificar Medio de Envio
             int opcionMedio = 0;
             string entradaMedio;
             bool medioValido = false;
             do {
-                cout << "Seleccione el nuevo medio de envío:\n";
-                cout << "1. Terrestre\n2. Marítimo\n3. Aéreo\n";
-                cout << "Opción: ";
+                cout << "Seleccione el nuevo medio de envio:\n";
+                cout << "1. Terrestre\n2. Maritimo\n3. Aereo\n";
+                cout << "Opcion: ";
                 cin >> entradaMedio;
                 try {
                     opcionMedio = stoi(entradaMedio);
                     if (opcionMedio >= 1 && opcionMedio <= 3) {
                         medioValido = true;
                     } else {
-                        cout << "Opción fuera de rango. Intente nuevamente.\n";
+                        cout << "Opcion fuera de rango. Intente nuevamente.\n";
                     }
                 } catch (const exception& e) {
-                    cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+                    cout << "Entrada invalida: " << e.what() << ". Intente nuevamente.\n";
                     cin.clear();
                     cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 }
             } while (!medioValido);
             switch (opcionMedio) {
                 case 1: ventaAModificarEnVector->medioEnvio = "Terrestre"; break;
-                case 2: ventaAModificarEnVector->medioEnvio = "Marítimo"; break;
-                case 3: ventaAModificarEnVector->medioEnvio = "Aéreo"; break;
+                case 2: ventaAModificarEnVector->medioEnvio = "Maritimo"; break;
+                case 3: ventaAModificarEnVector->medioEnvio = "Aereo"; break;
             }
-            cout << "Medio de envío modificado correctamente, el nuevo medio de envio es:"<<ventaAModificarEnVector->medioEnvio<<"\n";
+            cout << "Medio de envio modificado correctamente, el nuevo medio de envio es:"<<ventaAModificarEnVector->medioEnvio<<"\n";
             break;
         }
-        case 8: { // Modificar Estado de Envío
+        case 8: { // Modificar Estado de Envio
             int opcionEstado = 0;
             string entradaEstado;
             bool estadoValido = false;
             do {
-                cout << "Seleccione el nuevo estado de envío:\n";
+                cout << "Seleccione el nuevo estado de envio:\n";
                 cout << "1. Pendiente\n2. En Proceso\n3. Entregado\n4. Cancelado\n";
-                cout << "Opción: ";
+                cout << "Opcion: ";
                 cin >> entradaEstado;
                 try {
                     opcionEstado = stoi(entradaEstado);
                     if (opcionEstado >= 1 && opcionEstado <= 4) {
                         estadoValido = true;
                     } else {
-                        cout << "Opción fuera de rango. Intente nuevamente.\n";
+                        cout << "Opcion fuera de rango. Intente nuevamente.\n";
                     }
                 } catch (const exception& e) {
-                    cout << "Entrada inválida: " << e.what() << ". Intente nuevamente.\n";
+                    cout << "Entrada invalida: " << e.what() << ". Intente nuevamente.\n";
                     cin.clear();
                     cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 }
@@ -696,11 +696,11 @@ void modificarVenta(vector<Venta>& bdVector) {
                 case 3: ventaAModificarEnVector->estadoEnvio = "Entregado"; break;
                 case 4: ventaAModificarEnVector->estadoEnvio = "Cancelado"; break;
             }
-            cout << "Estado de envío modificado correctamente, estado actual"<<ventaAModificarEnVector->estadoEnvio<<"\n";
+            cout << "Estado de envio modificado correctamente, estado actual"<<ventaAModificarEnVector->estadoEnvio<<"\n";
             break;
         }
         default:
-            cout << "Opción de campo inválida.\n"; // No debería llegar aquí por la validación previa
+            cout << "Opcion de campo invalida.\n"; // No deberia llegar aqui por la validacion previa
             break;
     }
 
@@ -709,7 +709,7 @@ void modificarVenta(vector<Venta>& bdVector) {
     // Abre el archivo en modo de truncado (BORRA el contenido existente).
     ofstream archivo(BASE_DE_DATOS, ios::out | ios::trunc);
     if (!archivo.is_open()) {
-        cout << "ERROR CRÍTICO: No se pudo abrir el archivo '" << BASE_DE_DATOS << "' para escritura y actualización. Los cambios NO se guardaron permanentemente.\n";
+        cout << "ERROR CRiTICO: No se pudo abrir el archivo '" << BASE_DE_DATOS << "' para escritura y actualizacion. Los cambios NO se guardaron permanentemente.\n";
         return;
     }
 
@@ -727,7 +727,7 @@ void modificarVenta(vector<Venta>& bdVector) {
         archivo << fixed << setprecision(2) << v.precioUnitario << ",";
         archivo << fixed << setprecision(2) << v.montoTotal << ",";
         archivo << v.medioEnvio << ",";
-        archivo << v.estadoEnvio << endl; // Usar endl para asegurar flush y nueva línea
+        archivo << v.estadoEnvio << endl; // Usar endl para asegurar flush y nueva linea
     }
     archivo.close();
     cout << "Venta modificada y archivo CSV actualizado correctamente.\n";
@@ -742,7 +742,7 @@ void eliminarVenta(vector<Venta>& ventas) {
     try {
         idEliminar = stoi(idEliminarStr);
     } catch (const exception& e) {
-        cout << "ID inválido. Intente nuevamente." << endl;
+        cout << "ID invalido. Intente nuevamente." << endl;
         cin.clear();
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
         return;
@@ -759,10 +759,10 @@ void eliminarVenta(vector<Venta>& ventas) {
         ventas.erase(it, ventas.end());
         cout << "Venta con ID " << idEliminar << " eliminada de la memoria." << endl;
 
-        // Reescribir todo el archivo CSV para reflejar la eliminación
+        // Reescribir todo el archivo CSV para reflejar la eliminacion
         ofstream archivo(BASE_DE_DATOS, ios::out | ios::trunc);
         if (!archivo.is_open()) {
-            cout << "ERROR CRÍTICO: No se pudo abrir el archivo para reescritura después de eliminar. Los cambios NO se guardaron permanentemente." << endl;
+            cout << "ERROR CRiTICO: No se pudo abrir el archivo para reescritura despues de eliminar. Los cambios NO se guardaron permanentemente." << endl;
             return;
         }
 
@@ -789,7 +789,7 @@ void eliminarVenta(vector<Venta>& ventas) {
 
 
 // ======= FUNCIONES DE CONSULTAS (asumidas existentes) =======
-// Estas funciones no las modifico, solo las dejo como declaración si no están en tu original
+// Estas funciones no las modifico, solo las dejo como declaracion si no estan en tu original
 // ======= FUNCIONES DE PROCESAMIENTO =======
 void calcularTopCiudades(const vector<Venta>& ventas, int &ifCount) {
     unordered_map<string, unordered_map<string, double>> ventasAcumuladas;
@@ -825,7 +825,7 @@ void calcularTopCiudades(const vector<Venta>& ventas, int &ifCount) {
 void montoTotalPorProductoPorPais(const vector<Venta>& ventas, int &ifCount) {
     unordered_map<string, unordered_map<string, double>> montoPorProductoPorPais;
 
-    // Acumular ventas por país y producto
+    // Acumular ventas por pais y producto
     for (size_t i = 0; i < ventas.size(); ++i) {
         montoPorProductoPorPais[ventas[i].pais][ventas[i].producto] += ventas[i].montoTotal;
         ifCount++;
@@ -839,7 +839,7 @@ void montoTotalPorProductoPorPais(const vector<Venta>& ventas, int &ifCount) {
         const unordered_map<string, double>& productos = it->second;
 
         cout << "===============================\n";
-        cout << "PAÍS: " << pais << endl;
+        cout << "PAiS: " << pais << endl;
 
         for (unordered_map<string, double>::const_iterator it2 = productos.begin(); it2 != productos.end(); ++it2) {
             cout << "- " << it2->first << ": $" << it2->second << endl;
@@ -851,7 +851,7 @@ void montoTotalPorProductoPorPais(const vector<Venta>& ventas, int &ifCount) {
 void promedioVentasPorCategoriaPorPais(const vector<Venta>& ventas, int &ifCount) {
     unordered_map<string, unordered_map<string, pair<double, int>>> datosPorCategoriaPorPais;
 
-    // Acumular ventas y contar por país y categoría
+    // Acumular ventas y contar por pais y categoria
     for (size_t i = 0; i < ventas.size(); ++i) {
         datosPorCategoriaPorPais[ventas[i].pais][ventas[i].categoria].first += ventas[i].montoTotal;
         datosPorCategoriaPorPais[ventas[i].pais][ventas[i].categoria].second++;
@@ -866,7 +866,7 @@ void promedioVentasPorCategoriaPorPais(const vector<Venta>& ventas, int &ifCount
         const unordered_map<string, pair<double, int>>& categorias = it->second;
 
         cout << "===============================\n";
-        cout << "PAÍS: " << pais << endl;
+        cout << "PAiS: " << pais << endl;
 
         for (auto it2 = categorias.begin();
              it2 != categorias.end(); ++it2) {
@@ -886,7 +886,7 @@ void promedioVentasPorCategoriaPorPais(const vector<Venta>& ventas, int &ifCount
 void medioEnvioMasUtilizadoPorPais(const vector<Venta>& ventas, int &ifCount) {
     unordered_map<string, unordered_map<string, int>> conteoEnviosPorPais;
 
-    // Contar medios de envío por país
+    // Contar medios de envio por pais
     for (size_t i = 0; i < ventas.size(); ++i) {
         conteoEnviosPorPais[ventas[i].pais][ventas[i].medioEnvio]++;
         ifCount++;
@@ -908,14 +908,14 @@ void medioEnvioMasUtilizadoPorPais(const vector<Venta>& ventas, int &ifCount) {
             }
         }
 
-        cout << "PAÍS: " << pais << " Medio más usado: " << medioMasUsado << " (" << maxCantidad << " veces)" << endl;
+        cout << "PAiS: " << pais << " Medio mas usado: " << medioMasUsado << " (" << maxCantidad << " veces)" << endl;
          }
 }
 
 void medioEnvioMasUtilizadoPorCategoria(const vector<Venta>& ventas, int &ifCount) {
     unordered_map<string, unordered_map<string, int>> conteoEnviosPorCategoria;
 
-    // Contar medios de envío por categoría
+    // Contar medios de envio por categoria
     for (size_t i = 0; i < ventas.size(); ++i) {
         conteoEnviosPorCategoria[ventas[i].categoria][ventas[i].medioEnvio]++;
         ifCount++;
@@ -937,7 +937,7 @@ void medioEnvioMasUtilizadoPorCategoria(const vector<Venta>& ventas, int &ifCoun
             }
         }
 
-        cout << "CATEGORÍA: " << categoria << " Medio más usado: " << medioMasUsado << " (" << maxCantidad << " veces)" << endl;
+        cout << "CATEGORiA: " << categoria << " Medio mas usado: " << medioMasUsado << " (" << maxCantidad << " veces)" << endl;
          }
 }
 
@@ -962,7 +962,7 @@ void diaConMasVentas(const vector<Venta>& ventas, int &ifCount) {
          }
 
     if (!fechaMax.empty()) {
-        cout << "Día con más ventas: " << fechaMax << " (" << maxVentas << " ventas)" << endl;
+        cout << "Dia con mas ventas: " << fechaMax << " (" << maxVentas << " ventas)" << endl;
     } else {
         cout << "No hay ventas registradas." << endl;
     }
@@ -971,13 +971,13 @@ void diaConMasVentas(const vector<Venta>& ventas, int &ifCount) {
 void estadoEnvioMasFrecuentePorPais(const vector<Venta>& ventas, int &ifCount) {
     unordered_map<string, unordered_map<string, int>> estadosPorPais;
 
-    // Contar estados de envío por país
+    // Contar estados de envio por pais
     for (size_t i = 0; i < ventas.size(); ++i) {
         estadosPorPais[ventas[i].pais][ventas[i].estadoEnvio]++;
         ifCount++;
     }
 
-    cout << "Estado de envío más frecuente por país:\n";
+    cout << "Estado de envio mas frecuente por pais:\n";
 
     for (unordered_map<string, unordered_map<string, int>>::const_iterator it = estadosPorPais.begin();
          it != estadosPorPais.end(); ++it) {
@@ -1019,7 +1019,7 @@ void productoMasVendido(const vector<Venta>& ventas, int &ifCount) {
         }
     }
 
-    cout << "Producto más vendido en cantidad total:\n";
+    cout << "Producto mas vendido en cantidad total:\n";
     cout << "- " << productoTop << " (" << maxCantidad << " unidades vendidas)" << endl;
 }
 
@@ -1069,7 +1069,7 @@ void menuResumenVentas(const vector<Venta>& ventas) {
         cout << "Ingrese una opcion: ";
         cin >> opcionResumen;
 
-        // Limpiar el buffer después de leer un entero
+        // Limpiar el buffer despues de leer un entero
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
         switch (opcionResumen) {
@@ -1081,6 +1081,8 @@ void menuResumenVentas(const vector<Venta>& ventas) {
                 auto duracion = duration_cast<milliseconds>(fin - inicio).count();
                 cout << "Tiempo de ejecucion: " << duracion << " ms\n";
                 cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                cout << "Algoritmo/estructura utilizada: tabla hash (unordered_map) para agrupar, vector + sort() para ordenar." << endl;
                 break;
             }
             case 2: {
@@ -1091,6 +1093,7 @@ void menuResumenVentas(const vector<Venta>& ventas) {
                 auto duracion = duration_cast<milliseconds>(fin - inicio).count();
                 cout << "Tiempo de ejecucion: " << duracion << " ms\n";
                 cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                cout << "Algoritmo/estructura utilizada: tabla hash (unordered_map) anidada para agrupar montos por pais y producto." << endl;
                 break;
             }
             case 3: {
@@ -1101,6 +1104,7 @@ void menuResumenVentas(const vector<Venta>& ventas) {
                 auto duracion = duration_cast<milliseconds>(fin - inicio).count();
                 cout << "Tiempo de ejecucion: " << duracion << " ms\n";
                 cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                cout << "Algoritmo/estructura utilizada: tabla hash (unordered_map) anidada con pair para calcular promedios por pais y categoria." << endl;
                 break;
             }
             case 4: {
@@ -1111,6 +1115,7 @@ void menuResumenVentas(const vector<Venta>& ventas) {
                 auto duracion = duration_cast<milliseconds>(fin - inicio).count();
                 cout << "\nTiempo de ejecucion: " << duracion << " ms\n";
                 cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                cout << "Algoritmo/estructura utilizada: tabla hash (unordered_map) anidada para conteo y busqueda del maximo." << endl;
                 break;
             }
             case 5: {
@@ -1121,6 +1126,7 @@ void menuResumenVentas(const vector<Venta>& ventas) {
                 auto duracion = duration_cast<milliseconds>(fin - inicio).count();
                 cout << "\nTiempo de ejecucion: " << duracion << " ms\n";
                 cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                cout << "Algoritmo/estructura utilizada: tabla hash (unordered_map) anidada para conteo y busqueda del maximo." << endl;
                 break;
             }
             case 6: {
@@ -1131,6 +1137,7 @@ void menuResumenVentas(const vector<Venta>& ventas) {
                 auto duracion = duration_cast<milliseconds>(fin - inicio).count();
                 cout << "\nTiempo de ejecucion: " << duracion << " ms\n";
                 cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                cout << "Algoritmo/estructura utilizada: tabla hash (unordered_map) para conteo y busqueda del maximo." << endl;
                 break;
             }
             case 7: {
@@ -1141,6 +1148,7 @@ void menuResumenVentas(const vector<Venta>& ventas) {
                 auto duracion = duration_cast<milliseconds>(fin - inicio).count();
                 cout << "\nTiempo de ejecucion: " << duracion << " ms\n";
                 cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                cout << "Algoritmo/estructura utilizada: tabla hash (unordered_map) anidada para conteo y busqueda del maximo." << endl;
                 break;
             }
             case 8: {
@@ -1151,6 +1159,7 @@ void menuResumenVentas(const vector<Venta>& ventas) {
                 auto duracion = duration_cast<milliseconds>(fin - inicio).count();
                 cout << "\nTiempo de ejecucion: " << duracion << " ms\n";
                 cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                cout << "Algoritmo/estructura utilizada: tabla hash (unordered_map) para acumular cantidades y busqueda del maximo." << endl;
                 break;
             }
             case 9: {
@@ -1161,6 +1170,7 @@ void menuResumenVentas(const vector<Venta>& ventas) {
                 auto duracion = duration_cast<milliseconds>(fin - inicio).count();
                 cout << "\nTiempo de ejecucion: " << duracion << " ms\n";
                 cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                cout << "Algoritmo/estructura utilizada: tabla hash (unordered_map) para acumular cantidades y busqueda del minimo." << endl;
                 break;
             }
             case 10:
@@ -1200,7 +1210,7 @@ void menuConsultas() {
         mostrarMenu();
         cin >> opcion;
 
-        // Limpiar el buffer de entrada para que getline funcione bien después de cin >>
+        // Limpiar el buffer de entrada para que getline funcione bien despues de cin >>
         if (cin.peek() == '\n') {
             cin.ignore();
         }
@@ -1217,8 +1227,8 @@ void menuConsultas() {
                 auto fin = steady_clock::now();
                 auto duracion = duration_cast<milliseconds>(fin-inicio).count();
                 cout << "\nTiempo de ejecucion: " << duracion << "ms\n";
-                //TODO - ====================================================================================================
                 cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                cout << "Algoritmo/estructura utilizada: recorrido lineal (vector) con busqueda condicional." << endl;
                 break;
             }
             case 2: {
@@ -1236,8 +1246,8 @@ void menuConsultas() {
                 auto fin = steady_clock::now();
                 auto duracion = duration_cast<milliseconds>(fin-inicio).count();
                 cout << "\nTiempo de ejecucion: " << duracion << "ms\n";
-                //TODO - ====================================================================================================
                 cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                cout << "Algoritmo/estructura utilizada: recorrido lineal con filtros condicionales y conversion de fechas para comparacion." << endl;
                 break;
             }
             case 3: {
@@ -1253,8 +1263,8 @@ void menuConsultas() {
                 auto fin = steady_clock::now();
                 auto duracion = duration_cast<milliseconds>(fin-inicio).count();
                 cout << "\nTiempo de ejecucion: " << duracion << "ms\n";
-                //TODO - ====================================================================================================
                 cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                cout << "Algoritmo/estructura utilizada: recorrido lineal (unordered_map) con acumulacion y busqueda de maximo." << endl;
                 break;
             }
             case 4: {
@@ -1270,8 +1280,8 @@ void menuConsultas() {
                 auto fin = steady_clock::now();
                 auto duracion = duration_cast<milliseconds>(fin-inicio).count();
                 cout << "\nTiempo de ejecucion: " << duracion << "ms\n";
-                //TODO - ====================================================================================================
                 cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                cout << "Algoritmo/estructura utilizada: recorrido lineal (unordered_map) para consulta y comparacion condicional." << endl;
                 break;
             }
             case 5: {
@@ -1284,7 +1294,7 @@ void menuConsultas() {
                 cin >> umbral;
                 cout << "-> Buscar productos con promedio (mayor/menor) al umbral?: ";
                 cin >> modo;
-                // Limpiamos el buffer de entrada después de leer un número o palabra.
+                // Limpiamos el buffer de entrada despues de leer un numero o palabra.
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
                 auto inicio = steady_clock::now();
@@ -1292,8 +1302,8 @@ void menuConsultas() {
                 auto fin = steady_clock::now();
                 auto duracion = duration_cast<milliseconds>(fin-inicio).count();
                 cout << "\nTiempo de ejecucion: " << duracion << "ms\n";
-                //TODO - ====================================================================================================
                 cout << "Condicionales utilizados: " << ifCount << " \n" << endl;
+                cout << "Algoritmo/estructura utilizada: recorrido lineal (unordered_map) con filtro condicional." << endl;
                 break;
             }
             case 0: cout << "Saliendo del modulo de consultas." << endl; break;
@@ -1308,22 +1318,20 @@ void menuConsultas() {
     } while (opcion != 0);
 }
 
-// ======= FUNCIÓN MAIN CORREGIDA =======
+// ======= FUNCIoN MAIN CORREGIDA =======
 int main() {
     vector<Venta> ventas;
     Venta v; // Esta 'v' se usa para la nueva venta en agregarVenta, no es la base de datos principal
 
-    cout << "Iniciando sistema de gestión de ventas..." << endl;
-
-    // *** Cargar TODAS las ventas solo UNA VEZ al inicio del programa ***
-    // Esto asegura que 'ventas' siempre tenga el estado completo del CSV.
-    cargarVentas(ventas);
+    cout << "Iniciando sistema de gestion de ventas..." << endl;
 
     int opcion;
 
     do {
+        cargarVentas(ventas);
+
         cout << "\n====== MENU PRINCIPAL ======" << endl;
-        // La opción 1 ya no es "Cargar datos" en el sentido de iniciar, sino para recargar manualmente.
+        // La opcion 1 ya no es "Cargar datos" en el sentido de iniciar, sino para recargar manualmente.
         cout << "1. Recargar datos (solo si el archivo externo ha cambiado sin reiniciar el programa)" << endl;
         cout << "2. Modificar una venta" << endl;
         cout << "3. Agregar una venta" << endl;
@@ -1333,20 +1341,20 @@ int main() {
         cout << "7. Salir" << endl;
         cout << "Ingrese una opcion: ";
 
-        // Leer la opción de forma segura
+        // Leer la opcion de forma segura
         string opcionStr;
         cin >> opcionStr;
         try {
             opcion = stoi(opcionStr);
         } catch (const exception& e) {
-            cout << "Entrada inválida. Por favor, ingrese un número." << endl;
-            opcion = 0; // Para que el bucle continúe y pida la opción de nuevo
+            cout << "Entrada invalida. Por favor, ingrese un numero." << endl;
+            opcion = 0; // Para que el bucle continue y pida la opcion de nuevo
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             continue; // Saltar al siguiente ciclo del bucle
         }
 
-        // Limpiar el buffer después de leer un entero con cin >>
+        // Limpiar el buffer despues de leer un entero con cin >>
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
 
@@ -1363,14 +1371,14 @@ int main() {
                 }
                 break;
             case 3:
-                // `agregarVenta` ahora manejará la reescritura completa del archivo
+                // `agregarVenta` ahora manejara la reescritura completa del archivo
                 agregarVenta(ventas, v);
                 break;
             case 4:
                 if (ventas.empty()) {
                     cout << "No hay ventas para eliminar." << endl;
                 } else {
-                    eliminarVenta(ventas); // Se añade la implementación de eliminarVenta
+                    eliminarVenta(ventas); // Se añade la implementacion de eliminarVenta
                 }
                 break;
             case 5:
@@ -1387,7 +1395,7 @@ int main() {
                 cout << "Saliendo del programa..." << endl;
                 break;
             default:
-                cout << "Opción incorrecta, intente nuevamente." << endl;
+                cout << "Opcion incorrecta, intente nuevamente." << endl;
                 break;
         }
     } while (opcion != 7);

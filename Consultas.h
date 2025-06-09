@@ -6,24 +6,24 @@
 #include <limits>       // Necesario para limpiar el buffer de entrada (cin).
 #include "Estructuras.h" // Importamos nuestras definiciones de Venta, MapaPaises, etc.
 
-// --- FUNCIÓN AUXILIAR PARA MANEJO DE FECHAS ---
+// --- FUNCIoN AUXILIAR PARA MANEJO DE FECHAS ---
 /**
  * Convierte una fecha en formato string "DD/MM/YYYY" a un entero YYYYMMDD.
  * Dato: fecha El string de la fecha a convertir.
  * esta funcion devuelve Un entero que representa la fecha. Ej: "05/06/2025" -> 20250605.
  *
- * Se crea esta función para simplificar las comparaciones de rangos.
- * Comparar enteros es mucho más eficiente y simple que comparar strings de fechas.
- * El formato YYYYMMDD asegura que una fecha posterior siempre tendrá un número mayor.
+ * Se crea esta funcion para simplificar las comparaciones de rangos.
+ * Comparar enteros es mucho mas eficiente y simple que comparar strings de fechas.
+ * El formato YYYYMMDD asegura que una fecha posterior siempre tendra un numero mayor.
  * Se usa try-catch para manejar de forma segura fechas con formato incorrecto.
  */
 int fechaAEntero(const string& fecha) {
     try {
-        if (fecha.length() < 10) return 0; // Comprobación básica de longitud.
-        // Se extraen y concatenan los substrings de año, mes y día, y se convierten a entero.
+        if (fecha.length() < 10) return 0; // Comprobacion basica de longitud.
+        // Se extraen y concatenan los substrings de año, mes y dia, y se convierten a entero.
         return stoi(fecha.substr(6, 4) + fecha.substr(3, 2) + fecha.substr(0, 2));
     } catch(...) {
-        // Si la conversión falla, se devuelve 0 para evitar que el programa se detenga.
+        // Si la conversion falla, se devuelve 0 para evitar que el programa se detenga.
         return 0;
     }
 }
@@ -33,13 +33,13 @@ int fechaAEntero(const string& fecha) {
 // =====================================================================================
 
 /**
- * Muestra todas las ventas realizadas en una ciudad específica.
+ * Muestra todas las ventas realizadas en una ciudad especifica.
  * ventas El vector que contiene TODOS los registros de venta individuales.
  *
  * Esta consulta necesita mostrar detalles de ventas individuales, por lo que
  * debe usar el vector `todasLasVentas` que contiene los datos crudos. No puede usar
  * la estructura agregada (el mapa) porque esa estructura pierde los detalles de la ciudad.
- * La estrategia es una simple iteración lineal.
+ * La estrategia es una simple iteracion lineal.
  */
 void consultaPorCiudad(const vector<Venta>& ventas, string ciudad, int &ifCount) {
     cout << "\n--- Ventas en " << ciudad << " ---" << endl;
@@ -61,15 +61,15 @@ void consultaPorCiudad(const vector<Venta>& ventas, string ciudad, int &ifCount)
 }
 
 /**
- * Muestra las ventas de un país dentro de un rango de fechas.
+ * Muestra las ventas de un pais dentro de un rango de fechas.
  * Ventas El vector con todos los registros de venta.
  *
  * Al igual que la consulta por ciudad, esta requiere datos individuales,
- * por lo que opera sobre el vector. La clave aquí es el uso de la función auxiliar
- * `fechaAEntero` para hacer la comparación del rango de fechas de forma eficiente.
+ * por lo que opera sobre el vector. La clave aqui es el uso de la funcion auxiliar
+ * `fechaAEntero` para hacer la comparacion del rango de fechas de forma eficiente.
  */
 void consultaPorFechaYPais(const vector<Venta>& ventas, string pais, string fechaInicio, string fechaFin, int &ifCount) {
-    // Convertimos las fechas de entrada a enteros para poder compararlas numéricamente.
+    // Convertimos las fechas de entrada a enteros para poder compararlas numericamente.
     int f_inicio = fechaAEntero(fechaInicio);
     int f_fin = fechaAEntero(fechaFin);
 
@@ -77,9 +77,9 @@ void consultaPorFechaYPais(const vector<Venta>& ventas, string pais, string fech
     bool encontradas = false;
     for (const auto& v : ventas) {
         ifCount++;
-        // Primero filtramos por país, que es una comparación de strings simple.
+        // Primero filtramos por pais, que es una comparacion de strings simple.
         if (v.pais == pais) {
-            // Luego, solo para las ventas del país correcto, hacemos la conversión de fecha y comparamos.
+            // Luego, solo para las ventas del pais correcto, hacemos la conversion de fecha y comparamos.
             int f_venta = fechaAEntero(v.fecha);
             if (f_venta >= f_inicio && f_venta <= f_fin) {
                  cout << "  ID: " << v.idVenta << ", Ciudad: " << v.ciudad << ", Fecha: " << v.fecha << ", Producto: " << v.producto
@@ -99,23 +99,23 @@ void consultaPorFechaYPais(const vector<Venta>& ventas, string pais, string fech
 // =====================================================================================
 
 /**
- * Compara diversas métricas (monto total, producto más vendido, etc.) entre dos países.
+ * Compara diversas metricas (monto total, producto mas vendido, etc.) entre dos paises.
  * Datos: El mapa anidado (`MapaPaises`) que contiene los datos pre-agregados.
  *
- * Esta es una consulta analítica. Usar la estructura agregada es clave para
+ * Esta es una consulta analitica. Usar la estructura agregada es clave para
  * el rendimiento. En lugar de recorrer miles de ventas, solo recorremos los pocos
- * productos vendidos en cada país. Se usa `.at()` para acceder a los datos, que
- * es seguro porque está dentro de un bloque try-catch que maneja el caso de que un país no exista.
+ * productos vendidos en cada pais. Se usa `.at()` para acceder a los datos, que
+ * es seguro porque esta dentro de un bloque try-catch que maneja el caso de que un pais no exista.
  */
 void compararDosPaises(const MapaPaises& datos, string p1, string p2, int &ifCount) {
     try {
-        // Accedemos a los datos de cada país. Si no existe, .at() lanza una excepción.
+        // Accedemos a los datos de cada pais. Si no existe, .at() lanza una excepcion.
         const MapaProductos& map1 = datos.at(p1);
         const MapaProductos& map2 = datos.at(p2);
 
         // --- a. Monto total de ventas ---
         double monto1 = 0;
-        // Iteramos sobre los pares (producto, estadísticas) del primer país.
+        // Iteramos sobre los pares (producto, estadisticas) del primer pais.
         for (const auto& par : map1) { monto1 += par.second.montoTotalVendido; }
         double monto2 = 0;
         for (const auto& par : map2) { monto2 += par.second.montoTotalVendido; }
@@ -124,7 +124,7 @@ void compararDosPaises(const MapaPaises& datos, string p1, string p2, int &ifCou
         cout << "  " << p1 << ": $" << monto1 << endl;
         cout << "  " << p2 << ": $" << monto2 << endl;
 
-        // --- b. Producto más vendido (por cantidad de unidades) ---
+        // --- b. Producto mas vendido (por cantidad de unidades) ---
         string prodMasVendido1; int maxVentas1 = -1;
         for (const auto& par : map1) {
             ifCount++;
@@ -145,15 +145,15 @@ void compararDosPaises(const MapaPaises& datos, string p1, string p2, int &ifCou
         cout << "  " << p1 << ": " << prodMasVendido1 << " (" << maxVentas1 << " unidades)" << endl;
         cout << "  " << p2 << ": " << prodMasVendido2 << " (" << maxVentas2 << " unidades)" << endl;
 
-        // --- c. Medio de envío más usado ---
-        // Para esto, necesitamos agregar los conteos de todos los productos de cada país.
+        // --- c. Medio de envio mas usado ---
+        // Para esto, necesitamos agregar los conteos de todos los productos de cada pais.
         // Creamos mapas temporales para esta suma.
         unordered_map<string, int> envios1, envios2;
-        // Doble bucle: por cada producto, recorremos su mapa de medios de envío.
+        // Doble bucle: por cada producto, recorremos su mapa de medios de envio.
         for(const auto& par : map1) { for(const auto& envio : par.second.conteoMediosEnvio) { envios1[envio.first] += envio.second; }}
         for(const auto& par : map2) { for(const auto& envio : par.second.conteoMediosEnvio) { envios2[envio.first] += envio.second; }}
 
-        // Ahora buscamos el máximo en los mapas temporales ya agregados.
+        // Ahora buscamos el maximo en los mapas temporales ya agregados.
         string envioMasUsado1; int maxEnvios1 = -1;
         for(const auto& par : envios1) { if(par.second > maxEnvios1) {maxEnvios1 = par.second; envioMasUsado1 = par.first;}}
         string envioMasUsado2; int maxEnvios2 = -1;
@@ -169,13 +169,13 @@ void compararDosPaises(const MapaPaises& datos, string p1, string p2, int &ifCou
 }
 
 /**
- * Compara las ventas de dos productos específicos a través de todos los países.
+ * Compara las ventas de dos productos especificos a traves de todos los paises.
  * Datos: El mapa anidado con los datos agregados.
  *
- * La estrategia aquí es iterar sobre el nivel superior del mapa (los países)
- * y para cada país, buscar los datos de los dos productos de interés.
- * Usamos `.count()` para verificar si un producto existe en un país antes de acceder a él,
- * lo que evita errores y nos permite mostrar '0' si no se vendió.
+ * La estrategia aqui es iterar sobre el nivel superior del mapa (los paises)
+ * y para cada pais, buscar los datos de los dos productos de interes.
+ * Usamos `.count()` para verificar si un producto existe en un pais antes de acceder a el,
+ * lo que evita errores y nos permite mostrar '0' si no se vendio.
  */
 void compararDosProductos(const MapaPaises& datos, string prod1_str, string prod2_str, int &ifCount) {
     cout << "\n--- Comparativa de '" << prod1_str << "' vs '" << prod2_str << "' ---" << endl;
@@ -183,7 +183,7 @@ void compararDosProductos(const MapaPaises& datos, string prod1_str, string prod
     printf("%-15s | %-25s | %-25s\n", "Pais", (prod1_str + " (Cant/Monto)").c_str(), (prod2_str + " (Cant/Monto)").c_str());
     cout << "----------------+---------------------------+--------------------------" << endl;
 
-    // Iteramos sobre todos los países en nuestra estructura de datos.
+    // Iteramos sobre todos los paises en nuestra estructura de datos.
     for (const auto& parPais : datos) {
         ifCount++;
         const string& pais = parPais.first;
@@ -204,7 +204,7 @@ void compararDosProductos(const MapaPaises& datos, string prod1_str, string prod
             monto2 = stats.montoTotalVendido;
         }
 
-        // Solo mostramos la fila si al menos uno de los productos tuvo ventas en ese país.
+        // Solo mostramos la fila si al menos uno de los productos tuvo ventas en ese pais.
         if (cant1 > 0 || cant2 > 0) {
             printf("%-15s | %-4d / $%-15.2f | %-4d / $%-15.2f\n", pais.c_str(), cant1, monto1, cant2, monto2);
         }
@@ -212,12 +212,12 @@ void compararDosProductos(const MapaPaises& datos, string prod1_str, string prod
 }
 
 /**
- *  Busca productos cuyo monto promedio de venta está por encima o por debajo de un umbral.
+ *  Busca productos cuyo monto promedio de venta esta por encima o por debajo de un umbral.
  *  datos: El mapa anidado con los datos agregados.
  *
- * Esta consulta es un ejemplo perfecto de por qué pre-agregar los datos es
- * tan útil. El cálculo del promedio (`monto / cantidad`) se puede hacer al momento de la
- * consulta de forma muy rápida, ya que tenemos los totales listos.
+ * Esta consulta es un ejemplo perfecto de por que pre-agregar los datos es
+ * tan util. El calculo del promedio (`monto / cantidad`) se puede hacer al momento de la
+ * consulta de forma muy rapida, ya que tenemos los totales listos.
  */
 void buscarPorPromedio(const MapaPaises& datos, string pais, string modo, double umbral, int &ifCount) {
     try {
@@ -228,11 +228,11 @@ void buscarPorPromedio(const MapaPaises& datos, string pais, string modo, double
             ifCount++;
             const string& producto = par.first;
             const auto& stats = par.second;
-            // Importante: verificar que la cantidad no sea cero para evitar división por cero.
+            // Importante: verificar que la cantidad no sea cero para evitar division por cero.
             if (stats.cantidadTotalVendida > 0) {
                 double promedio = stats.montoTotalVendido / stats.cantidadTotalVendida;
 
-                // Comprobamos si el modo y el promedio cumplen la condición.
+                // Comprobamos si el modo y el promedio cumplen la condicion.
                 if ((modo == "mayor" && promedio > umbral) || (modo == "menor" && promedio < umbral)) {
                     cout << "  " << producto << " (Promedio por unidad: $" << promedio << ")" << endl;
                 }
@@ -241,4 +241,5 @@ void buscarPorPromedio(const MapaPaises& datos, string pais, string modo, double
     } catch(const out_of_range& e) {
         cerr << "Error: El pais ingresado no fue encontrado." << endl;
     }
+
 }
